@@ -59,12 +59,12 @@ def clean_df(df):
 def main(model_path, data_path, train):
     
     if train:
-        with open("BP_data/czechData.json", encoding="utf8") as f:
+        with open("semantic-search/BP_data/czechData.json", encoding="utf8") as f:
             docs = json.load(f)
         df_docs = pd.DataFrame(docs)
         df_docs = df_docs.drop("date", axis=1)
 
-        with open("BP_data/stop_words_czech.json", encoding="utf8") as f:
+        with open("semantic-search/BP_data/stop_words_czech.json", encoding="utf8") as f:
             stop_words = json.load(f)   
 
         clean_df(df_docs)

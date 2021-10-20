@@ -1,0 +1,11 @@
+/BP_data/czechData.json
+/BP_data/czechData_test.json
+/BP_data/docs_cleaned.csv
+/BP_data/stop_words_czech.json
+/BP_data/topicData.json
+/BP_data/topics_cleaned.csv
+/BP_data/vectorized_data.csv
+/BP_data/vectorized_topics.csv
+/BP_data/word2vec_model.model
+/BP_data/word2vec_model.model.syn1neg.npy
+/BP_data/word2vec_model.model.wv.vectors.npy

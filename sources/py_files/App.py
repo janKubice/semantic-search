@@ -1,7 +1,6 @@
 from tkinter import *
-from tkinter.ttk import Progressbar
-from tkinter import ttk
 from searching import Search
+from Tfidf_prepro import Tfidf_prepro
 import json
 import pandas as pd
 
@@ -53,7 +52,7 @@ search_text.grid(column=0, row=1)
 search_button = Button(win, text="Search", command=search_button_clicked)
 search_button.grid(column=3, row=1)
 
-with open("BP_data/czechData.json", encoding="utf8") as f:
+with open("semantic-search/BP_data/czechData_test.json", encoding="utf8") as f:
     docs = json.load(f)
 
 pd.set_option('display.max_rows', None)
@@ -61,8 +60,10 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
+
 docs = pd.DataFrame(docs)
-search = Search(False)
+
+search = Search(True,'semantic-search/BP_data/czechData_test.json', 'semantic-search/BP_data/topicData.json')
 
 
 win.mainloop()

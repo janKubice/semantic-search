@@ -6,23 +6,30 @@ from unidecode import unidecode
 from gensim.models import Word2Vec
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+from Tfidf_prepro import Tfidf_prepro
 
 class Search():   
-    def __init__(self, train):
+    def __init__(self, train, data_path, topics_path):
         self.df_docs = None
         self.df_topics = None
         self.df_combined = None
         self.model = None
-        #TODO lemma nejde
-        self.prep = WordPreprocessing(lemmatize=False)
+
+        self.prep = WordPreprocessing(deaccent=False)
+        self.tfidf = Tfidf_prepro()
 
         if train == True:
-            self.load_data("BP_data/czechData_test.json", "BP_data/topicData.json")
+            self.load_data(data_path, topics_path)
+            self.df_docs.index = self.df_docs['id'].values
             self.clean_data()
             self.preprocess(self.df_docs)
             self.preprocess(self.df_topics)
-            self.df_docs.to_csv('BP_data/docs_cleaned.csv')
-            self.df_topics.to_csv('BP_data/topics_cleaned.csv')
+
+            tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
+            self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
+
+            self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv')
+            self.df_topics.to_csv('semantic-search/BP_data/topics_cleaned.csv')
 
             self.df_topics = self.df_topics.rename(columns={'description':'text'})
             self.df_combined = self.df_docs.append(self.df_topics, ignore_index=True)
@@ -42,17 +49,17 @@ class Search():
             self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
             self.df_topics['vector'] = self.df_topics['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
         
-            self.df_docs.to_csv('BP_data/vectorized_data.csv')
-            self.df_topics.to_csv('BP_data/vectorized_topics.csv')
+            self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')
+            self.df_topics.to_csv('semantic-search/BP_data/vectorized_topics.csv')
             
-            self.model.save('BP_data/word2vec_model.model')
+            self.model.save('semantic-search/BP_data/word2vec_model.model')
         else:
-            self.df_docs = pd.read_csv('BP_data/docs_cleaned.csv')
-            self.df_topics = pd.read_csv('BP_data/topics_cleaned.csv')
+            self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
+            self.df_topics = pd.read_csv('semantic-search/BP_data/topics_cleaned.csv')
 
             self.df_topics = self.df_topics.rename(columns={'description':'text'})
 
-            self.model = Word2Vec.load('BP_data/word2vec_model.model')
+            self.model = Word2Vec.load('semantic-search/BP_data/word2vec_model.model')
             self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
             self.df_topics['vector'] = self.df_topics['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
