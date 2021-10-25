@@ -25,15 +25,15 @@ class Search():
             self.preprocess(self.df_docs)
             self.preprocess(self.df_topics)
 
-            tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
-            self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
-
             self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv')
             self.df_topics.to_csv('semantic-search/BP_data/topics_cleaned.csv')
 
             self.df_topics = self.df_topics.rename(columns={'description':'text'})
             self.df_combined = self.df_docs.append(self.df_topics, ignore_index=True)
         
+            tfidf_df = self.tfidf.calculate_ifidf(self.df_combined)
+            self.df_docs = self.tfidf.delete_words(self.df_combined,tfidf_df)
+
             text = [x for x in self.df_combined['text']]
             title = [x for x in self.df_combined['title']]
 

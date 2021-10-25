@@ -1,6 +1,5 @@
 from tkinter import *
 from searching import Search
-from Tfidf_prepro import Tfidf_prepro
 import json
 import pandas as pd
 
