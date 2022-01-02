@@ -1,4 +1,4 @@
-from WordPreprocessing import WordPreprocessing
+from word_preprocessing import WordPreprocessing
 import json
 import pandas as pd
 import re
@@ -6,102 +6,120 @@ from unidecode import unidecode
 from gensim.models import Word2Vec
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-from Tfidf_prepro import Tfidf_prepro
+from tfidf_prepro import Tfidf_prepro
 
-class Search():   
-    def __init__(self, train, data_path, topics_path):
+class Search():
+    """
+    Třída obsahuje metody na vyhledávání podobných dokumentů
+    """
+
+    def __init__(self, train:bool, data_path:str):
+        """Konstruktor
+
+        Args:
+            train (bool): zda se má model natrénovat -> True a nebo načíst -> False
+            data_path (str): cesta k dokumentům
+        """
         self.df_docs = None
-        self.df_topics = None
-        self.df_combined = None
         self.model = None
 
         self.prep = WordPreprocessing(deaccent=False)
         self.tfidf = Tfidf_prepro()
 
         if train == True:
-            self.load_data(data_path, topics_path)
-            self.df_docs.index = self.df_docs['id'].values
-            self.clean_data()
-            self.preprocess(self.df_docs)
-            self.preprocess(self.df_topics)
-
-            self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv')
-            self.df_topics.to_csv('semantic-search/BP_data/topics_cleaned.csv')
-
-            self.df_topics = self.df_topics.rename(columns={'description':'text'})
-            self.df_combined = self.df_docs.append(self.df_topics, ignore_index=True)
-        
-            tfidf_df = self.tfidf.calculate_ifidf(self.df_combined)
-            self.df_docs = self.tfidf.delete_words(self.df_combined,tfidf_df)
-
-            text = [x for x in self.df_combined['text']]
-            title = [x for x in self.df_combined['title']]
-
-            for i in title:
-                text.append(i)
-
-            data = []
-
-            for i in text:
-                data.append(i.split())
-
-            self.model = Word2Vec(data, vector_size=300, min_count=2, window=5, sg=1, workers=4)
-            self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
-            self.df_topics['vector'] = self.df_topics['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
-        
-            self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')
-            self.df_topics.to_csv('semantic-search/BP_data/vectorized_topics.csv')
-            
-            self.model.save('semantic-search/BP_data/word2vec_model.model')
+            self.train(data_path)
         else:
-            self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
-            self.df_topics = pd.read_csv('semantic-search/BP_data/topics_cleaned.csv')
+            self.load()
 
-            self.df_topics = self.df_topics.rename(columns={'description':'text'})
+    def load(self):
+        """
+        Načte model a dokumenty
+        """
+        self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
 
-            self.model = Word2Vec.load('semantic-search/BP_data/word2vec_model.model')
-            self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
-            self.df_topics['vector'] = self.df_topics['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
+        self.model = Word2Vec.load('semantic-search/model/word2vec_model.model')
+        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
-    def process_sentence(self, sentence, prep):
+    def train(self, data_path:str):
+        """Natrénuje model word2vec
+
+        Args:
+            data_path (str): cesta k dokumentů
+        """
+        self.df_docs = self.load_data(data_path)
+        self.df_docs.index = self.df_docs['id'].values
+        self.clean_df(self.df_docs)
+        self.preprocess(self.df_docs)
+
+        self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv')
+    
+        tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
+        self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
+
+        text = [x for x in self.df_docs['text']]
+        title = [x for x in self.df_docs['title']]
+
+        for i in title:
+            text.append(i)
+
+        data = []
+
+        for i in text:
+            data.append(i.split())
+
+        self.model = Word2Vec(data, vector_size=300, min_count=2, window=5, sg=1, workers=4)
+        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
+    
+        self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')        
+        self.model.save('semantic-search/model/word2vec_model.model')
+
+    def process_sentence(self, sentence):
+        """Zpracuje jednu větu dokumentu
+
+        Args:
+            sentence (str): věta
+
+        Returns:
+            array: pole upravených slov
+        """
         sent = [self.prep.process_word(w) for w in sentence.split()]
         sent_not_none = ' '.join([str(elem) for elem in sent if len(elem) > 0])
         return sent_not_none
 
-    def load_data(self, path_docs, path_topics):
+    def load_data(self, path_docs:str) -> pd.DataFrame:
+        """Načte data
+
+        Args:
+            path_docs (str): cesta k souboru s dokumenty
+
+        Returns:
+            pd.DataFrame: načtené dokumenty
+        """
         with open(path_docs, encoding="utf8") as f:
             docs = json.load(f)
 
-        self.df_docs = pd.DataFrame(docs)
-
-        with open(path_topics, encoding="utf8") as f:
-            topics = json.load(f)
-
-        self.df_topics = pd.DataFrame(topics)
-
-        self.df_docs = self.df_docs.drop("date", axis=1)
-        self.df_topics = self.df_topics.drop(['narrative', 'lang'], axis=1)
-
-    def clean_text(self, text):
-        text=re.sub('\w*\d\w*','', text)
-        text=re.sub('\n',' ',text)
-        text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text)
-        text=re.sub('[^A-Za-z0-9]+ ', ' ', text)
-        text=re.sub('"().,_', '',text)
-        return text
+        df_docs = pd.DataFrame(docs)
+        df_docs = self.df_docs.drop("date", axis=1)
+        return df_docs
 
     def clean_df(self, df):
+        """Vyčiští dataframe
+
+        Args:
+            df (pd.DataFrame): dataframe dokuemntu
+        """
         for col in df.columns:
             if col == 'id':
                 continue
             df[col] = df[col].apply(lambda x: unidecode(x, "utf-8"))
-            df[col] = df[col].apply(lambda x: self.clean_text(x))
+            df[col] = df[col].apply(lambda x: self.prep.clean_text(x))
 
-    def clean_data(self):
-        self.clean_df(self.df_docs)
-        self.clean_df(self.df_topics)
+    def preprocess(self, df:pd.DataFrame):
+        """Předzpracuje dokument, metoda je inplace
 
-    def preprocess(self, df):
+        Args:
+            df (pd.DataFrame): dataframe dokumentů
+        """
         for col in df.columns:
             if col == 'id':
                 continue
@@ -109,9 +127,14 @@ class Search():
 
     
     def get_embedding_w2v(self, doc_tokens):
-        '''
-        Vrátí vektor reprezentujícíc dokument
-        '''
+        """Vrátí vektor reprezentujícíc dokument
+
+        Args:
+            doc_tokens (array): pole slov dokumentu
+
+        Returns:
+            vector: vektor reprezentující dokument
+        """
         embeddings = []
         if len(doc_tokens)<1:
             return np.zeros(300)
@@ -125,8 +148,16 @@ class Search():
             return np.mean(embeddings, axis=0)
 
 
-    def ranking_ir(self, query, n):
-        '''Vrátí n nejlepších výsledku pro query'''
+    def ranking_ir(self, query:str, n:int) -> pd.DataFrame:
+        """Nalezne a vrátí n nejlepších výsledků pro query
+
+        Args:
+            query (str): dotaz
+            n (int): počet nejlepších výsledků
+
+        Returns:
+            pd.DataFrame: dataframe s n nejlepšími výsledky
+        """
         
         query = self.process_sentence(query, self.prep)
 

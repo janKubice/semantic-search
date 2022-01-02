@@ -8,8 +8,14 @@ labels_ids = None
 
 docs = None
 
+#TODO udělat načtení dotazů ze souboru
+
 
 def search_button_clicked():
+    """
+    Reakce na stisk vyhledávacího tlačítka
+    """
+
     results = search.ranking_ir(search_text.get(),10)
     labels_ids = [None] * 10
 
@@ -62,7 +68,7 @@ pd.set_option('display.max_colwidth', None)
 
 docs = pd.DataFrame(docs)
 
-search = Search(True,'semantic-search/BP_data/czechData_test.json', 'semantic-search/BP_data/topicData.json')
+search = Search(True,'semantic-search/BP_data/czechData_test.json')
 
 
 win.mainloop()
