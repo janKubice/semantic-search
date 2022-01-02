@@ -12,3 +12,7 @@
 /BP_data/tfid.csv
 /semantic_search_data_eval/interface-2020/TREC/topicData.json
 /semantic_search_data_eval/interface-2020/TREC/czechData.json
+/semantic_search_data_eval/interface-2020/target/classes/cz/zcu/kiv/nlp/ir/trec/*.class
+/sources/py_files/__pycache__/*.pyc
+/semantic_search_data_eval/interface-2020/TREC/czechData.bin
+/semantic_search_data_eval/interface-2020/TREC/topicData.bin
