@@ -9,3 +9,6 @@
 /BP_data/word2vec_model.model
 /BP_data/word2vec_model.model.syn1neg.npy
 /BP_data/word2vec_model.model.wv.vectors.npy
+/BP_data/tfid.csv
+/semantic_search_data_eval/interface-2020/TREC/topicData.json
+/semantic_search_data_eval/interface-2020/TREC/czechData.json
