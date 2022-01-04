@@ -98,8 +98,9 @@ class Search():
         with open(path_docs, encoding="utf8") as f:
             docs = json.load(f)
 
+        
         df_docs = pd.DataFrame(docs)
-        df_docs = self.df_docs.drop("date", axis=1)
+        df_docs = df_docs.drop("date", axis=1)
         return df_docs
 
     def clean_df(self, df):
@@ -123,7 +124,7 @@ class Search():
         for col in df.columns:
             if col == 'id':
                 continue
-            df[col] = df[col].apply(lambda x: self.process_sentence(x, self.prep))
+            df[col] = df[col].apply(lambda x: self.process_sentence(x))
 
     
     def get_embedding_w2v(self, doc_tokens):
@@ -159,7 +160,7 @@ class Search():
             pd.DataFrame: dataframe s n nejlepšími výsledky
         """
         
-        query = self.process_sentence(query, self.prep)
+        query = self.process_sentence(query)
 
         vector=self.get_embedding_w2v(query.split())
 

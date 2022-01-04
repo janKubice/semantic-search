@@ -5,11 +5,7 @@ import pandas as pd
 
 search = None
 labels_ids = None
-
 docs = None
-
-#TODO udělat načtení dotazů ze souboru
-
 
 def search_button_clicked():
     """
@@ -30,6 +26,8 @@ def search_button_clicked():
         label.grid(column=1, row=3+i)
         
 def document_clicked(event):
+    """Reakce na kliknutí na ID dokumentu
+    """
     caller = event.widget
     document_id = caller.cget("text")
     
@@ -44,31 +42,57 @@ def document_clicked(event):
 
     document_text = Label(document_win, text=document['text'], wraplength=450).pack()
 
-win = Tk()
-win.title('Document search')
-win.geometry('500x600')
+def load_queries(file:str, search:Search, top_n:int):
+    """Načte dotazy ze souboru, najde top_n nejlepších schod v dokumentech a uloží výsledky do souboru
 
-search_label = Label(win, text="Search")
-search_label.grid(column=0, row=0)
+    Args:
+        file (str): cesta k dotazům
+        search (Search): instance vyhledávače
+        top_n (int): počet nejlepších dokumentů vůči dotazu
+    """
+    results = open('C:/VisualStudioCode/Python/Škola/BP/semantic-search/BP_data/results.txt', 'w+')
 
-search_text = Entry(win, width=30,textvariable='yo')
-search_text.grid(column=0, row=1)
+    with open(file, encoding="utf8") as f:
+        queries = json.load(f)
 
-search_button = Button(win, text="Search", command=search_button_clicked)
-search_button.grid(column=3, row=1)
+    df_queries = pd.DataFrame(queries)
+    df_queries.drop(['description', 'narrative', 'lang'], axis=1, inplace=True)
 
-with open("semantic-search/BP_data/czechData_test.json", encoding="utf8") as f:
-    docs = json.load(f)
+    for index,query in df_queries.iterrows():
+        top_q = search.ranking_ir(query['title'], top_n)
+        for idx, res in top_q.iterrows():
+            results.write(f"{query['id']} 0 {res['id']} 0\n")
+        
 
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', None)
+TO_FILE = True
+TRAIN = False
+
+search = Search(TRAIN,'semantic-search/BP_data/czechData_test.json')
+if TO_FILE:
+    load_queries('C:/VisualStudioCode/Python/Škola/BP/semantic-search/BP_data/topicData.json', search, 30)
+    exit(0)
+else:
+    win = Tk()
+    win.title('Document search')
+    win.geometry('500x600')
+
+    search_label = Label(win, text="Search")
+    search_label.grid(column=0, row=0)
+
+    search_text = Entry(win, width=30,textvariable='yo')
+    search_text.grid(column=0, row=1)
+
+    search_button = Button(win, text="Search", command=search_button_clicked)
+    search_button.grid(column=3, row=1)
+
+    with open("semantic-search/BP_data/czechData_test.json", encoding="utf8") as f:
+        docs = json.load(f)
+
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', None)
 
 
-docs = pd.DataFrame(docs)
-
-search = Search(True,'semantic-search/BP_data/czechData_test.json')
-
-
-win.mainloop()
+    docs = pd.DataFrame(docs)
+    win.mainloop()
