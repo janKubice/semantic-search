@@ -57,7 +57,8 @@ def load_queries(file:str, search:Search, top_n:int):
         queries = json.load(f)
 
     df_queries = pd.DataFrame(queries)
-    df_queries.drop(['description', 'narrative', 'lang'], axis=1, inplace=True)
+    #if ['description', 'narrative', 'lang'] in df_queries.columns:
+    #    df_queries.drop(['description', 'narrative', 'lang'], axis=1, inplace=True)
 
     for index,query in df_queries.iterrows():
         top_q = search.ranking_ir(query['title'], top_n)
@@ -65,13 +66,16 @@ def load_queries(file:str, search:Search, top_n:int):
             results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
         
 
-TO_FILE = True
-TRAIN = True
-DOCUMENT_PATH = 'semantic-search/BP_data/czechData.json'
+TO_FILE = False #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
+TRAIN = False #Zda se má W2V natrénovat a nebo použít uložený
 
-search = Search(TRAIN, DOCUMENT_PATH)
+DOCUMENT_PATH = 'semantic-search/BP_data/czechData_test.json'
+QUERIES_PATH = 'semantic-search/BP_data/topicData.json'
+MODEL_PATH = 'semantic-search/model/word2vec_model.model'
+
+search = Search(TRAIN, DOCUMENT_PATH, MODEL_PATH)
 if TO_FILE:
-    load_queries('semantic-search/BP_data/topicData.json', search, 100)
+    load_queries(QUERIES_PATH, search, 100)
     exit(0)
 else:
     win = Tk()

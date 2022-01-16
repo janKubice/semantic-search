@@ -13,7 +13,7 @@ class Search():
     Třída obsahuje metody na vyhledávání podobných dokumentů
     """
 
-    def __init__(self, train:bool, data_path:str):
+    def __init__(self, train:bool, data_path:str, model_path:str = None):
         """Konstruktor
 
         Args:
@@ -22,6 +22,7 @@ class Search():
         """
         self.df_docs = None
         self.model = None
+        self.model_path = model_path
 
         self.prep = WordPreprocessing(deaccent=False)
         self.tfidf = Tfidf_prepro()
@@ -37,7 +38,7 @@ class Search():
         """
         self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
 
-        self.model = Word2Vec.load('semantic-search/model/word2vec_model.model')
+        self.model = Word2Vec.load(self.model_path)
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
     def train(self, data_path:str):
@@ -146,7 +147,6 @@ class Search():
                     embeddings.append(self.model.wv.word_vec(tok))
                 else:
                     embeddings.append(np.random.rand(300))
-            # mean the vectors of individual words to get the vector of the document
             return np.mean(embeddings, axis=0)
 
 
