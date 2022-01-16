@@ -51,10 +51,11 @@ class Search():
         self.clean_df(self.df_docs)
         self.preprocess(self.df_docs)
 
-        self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv')
+        self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv', index=False)
     
-        tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
-        self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
+        #TODO problém s ramkou -> potřeba 260gb na tfidf. Předelat ať se to nepočítá celé najednou ale postupně na části.
+        #tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
+        #self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
 
         text = [x for x in self.df_docs['text']]
         title = [x for x in self.df_docs['title']]

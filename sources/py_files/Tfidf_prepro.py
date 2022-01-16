@@ -11,7 +11,7 @@ class Tfidf_prepro:
     """
 
     def calculate_ifidf(self, docs):
-        """Pro každý dokument spočítá pro jednotlivá slova jejich výhy
+        """Pro každý dokument spočítá pro jednotlivá slova jejich váhy
 
         Args:
             docs (array): Pole dokumentů, každý prvek v poli je text jednoho dokumentu

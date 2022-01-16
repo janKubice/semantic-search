@@ -1,3 +1,4 @@
+from inspect import Traceback
 from tkinter import *
 from searching import Search
 import json
@@ -61,15 +62,16 @@ def load_queries(file:str, search:Search, top_n:int):
     for index,query in df_queries.iterrows():
         top_q = search.ranking_ir(query['title'], top_n)
         for idx, res in top_q.iterrows():
-            results.write(f"{query['id']} 0 {res['id']} 0\n")
+            results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
         
 
 TO_FILE = True
-TRAIN = False
+TRAIN = True
+DOCUMENT_PATH = 'semantic-search/BP_data/czechData.json'
 
-search = Search(TRAIN,'semantic-search/BP_data/czechData_test.json')
+search = Search(TRAIN, DOCUMENT_PATH)
 if TO_FILE:
-    load_queries('C:/VisualStudioCode/Python/Škola/BP/semantic-search/BP_data/topicData.json', search, 30)
+    load_queries('semantic-search/BP_data/topicData.json', search, 100)
     exit(0)
 else:
     win = Tk()
@@ -79,13 +81,13 @@ else:
     search_label = Label(win, text="Search")
     search_label.grid(column=0, row=0)
 
-    search_text = Entry(win, width=30,textvariable='yo')
+    search_text = Entry(win, width=30,textvariable='text')
     search_text.grid(column=0, row=1)
 
     search_button = Button(win, text="Search", command=search_button_clicked)
     search_button.grid(column=3, row=1)
 
-    with open("semantic-search/BP_data/czechData_test.json", encoding="utf8") as f:
+    with open(DOCUMENT_PATH, encoding="utf8") as f:
         docs = json.load(f)
 
     pd.set_option('display.max_rows', None)
