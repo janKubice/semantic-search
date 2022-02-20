@@ -4,7 +4,7 @@ from searching import Search
 import json
 import pandas as pd
 
-search = None
+searcher:Search = None
 labels_ids = None
 docs = None
 
@@ -13,7 +13,7 @@ def search_button_clicked():
     Reakce na stisk vyhledávacího tlačítka
     """
 
-    results = search.ranking_ir(search_text.get(),10)
+    results = searcher.ranking_ir(search_text.get(),10)
     labels_ids = [None] * 10
 
     for i,j in results.iterrows():
@@ -27,7 +27,8 @@ def search_button_clicked():
         label.grid(column=1, row=3+i)
         
 def document_clicked(event):
-    """Reakce na kliknutí na ID dokumentu
+    """
+    Reakce na kliknutí na ID dokumentu
     """
     caller = event.widget
     document_id = caller.cget("text")
@@ -44,14 +45,14 @@ def document_clicked(event):
     document_text = Label(document_win, text=document['text'], wraplength=450).pack()
 
 def load_queries(file:str, search:Search, top_n:int):
-    """Načte dotazy ze souboru, najde top_n nejlepších schod v dokumentech a uloží výsledky do souboru
+    """Načte dotazy ze souboru, najde top_n nejlepších shod v dokumentech a uloží výsledky do souboru
 
     Args:
         file (str): cesta k dotazům
         search (Search): instance vyhledávače
         top_n (int): počet nejlepších dokumentů vůči dotazu
     """
-    results = open('C:/VisualStudioCode/Python/Škola/BP/semantic-search/BP_data/results.txt', 'w+')
+    results = open('semantic-search/BP_data/results.txt', 'w+')
 
     with open(file, encoding="utf8") as f:
         queries = json.load(f)
@@ -66,16 +67,18 @@ def load_queries(file:str, search:Search, top_n:int):
             results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
         
 
-TO_FILE = False #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
+TO_FILE = True #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
 TRAIN = False #Zda se má W2V natrénovat a nebo použít uložený
 
 DOCUMENT_PATH = 'semantic-search/BP_data/czechData_test.json'
 QUERIES_PATH = 'semantic-search/BP_data/topicData.json'
-MODEL_PATH = 'semantic-search/model/word2vec_model.model'
+MODEL_PATH = 'semantic-search/BP_data/czech_m.vec'
 
-search = Search(TRAIN, DOCUMENT_PATH, MODEL_PATH)
+TOP_N = 100
+
+searcher = Search(TRAIN, DOCUMENT_PATH, MODEL_PATH)
 if TO_FILE:
-    load_queries(QUERIES_PATH, search, 100)
+    load_queries(QUERIES_PATH, searcher, TOP_N)
     exit(0)
 else:
     win = Tk()

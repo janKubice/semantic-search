@@ -80,7 +80,15 @@ class WordPreprocessing:
         return str(text)
 
 
-    def clean_text(self, text):
+    def clean_text(self, text) -> str:
+        """Odstraní z textu všechny překážejícíc znaky, webové adresy a podobně
+
+        Args:
+            text (str): text ke zpracování
+
+        Returns:
+            str: zpracovaný text
+        """
         text=re.sub('\w*\d\w*','', text)
         text=re.sub('\n',' ',text)
         text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text)

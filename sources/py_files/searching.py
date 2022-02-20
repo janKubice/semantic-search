@@ -1,19 +1,20 @@
 from word_preprocessing import WordPreprocessing
 import json
 import pandas as pd
-import re
 from unidecode import unidecode
 from gensim.models import Word2Vec
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from tfidf_prepro import Tfidf_prepro
+from gensim.models import KeyedVectors
+import fasttext
 
 class Search():
     """
     Třída obsahuje metody na vyhledávání podobných dokumentů
     """
 
-    def __init__(self, train:bool, data_path:str, model_path:str = None):
+    def __init__(self, train:bool, data_path:str, model_path:str = None, vector_size:int = 100):
         """Konstruktor
 
         Args:
@@ -23,6 +24,7 @@ class Search():
         self.df_docs = None
         self.model = None
         self.model_path = model_path
+        self.vector_size = vector_size
 
         self.prep = WordPreprocessing(deaccent=False)
         self.tfidf = Tfidf_prepro()
@@ -38,7 +40,20 @@ class Search():
         """
         self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
 
-        self.model = Word2Vec.load(self.model_path)
+        if '.vec' in self.model_path:
+            embeding = dict()
+
+            with open(self.model_path, encoding='utf-8') as vec_file:
+                for i, line in enumerate(vec_file):
+                    token = line.split(' ')
+                    word = token[0]
+                    vector = np.asarray(token[1:], dtype='float32')
+                    embeding[word] = vector
+            
+            self.model = Word2Vec(embeding)
+        else:
+            self.model = Word2Vec.load(self.model_path)
+
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
     def train(self, data_path:str):
@@ -69,7 +84,7 @@ class Search():
         for i in text:
             data.append(i.split())
 
-        self.model = Word2Vec(data, vector_size=300, min_count=2, window=5, sg=1, workers=4)
+        self.model = Word2Vec(data, vector_size=self.vector_size, min_count=2, window=5, sg=1, workers=4)
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
     
         self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')        
@@ -140,13 +155,13 @@ class Search():
         """
         embeddings = []
         if len(doc_tokens)<1:
-            return np.zeros(300)
+            return np.zeros(self.vector_size)
         else:
             for tok in doc_tokens:
                 if tok in self.model.wv.key_to_index:
                     embeddings.append(self.model.wv.word_vec(tok))
                 else:
-                    embeddings.append(np.random.rand(300))
+                    embeddings.append(np.random.rand(self.vector_size))
             return np.mean(embeddings, axis=0)
 
 
