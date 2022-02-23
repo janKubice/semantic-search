@@ -67,7 +67,7 @@ def load_queries(file:str, search:Search, top_n:int):
             results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
         
 
-TO_FILE = True #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
+TO_FILE = False #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
 TRAIN = False #Zda se má W2V natrénovat a nebo použít uložený
 
 DOCUMENT_PATH = 'semantic-search/BP_data/czechData_test.json'

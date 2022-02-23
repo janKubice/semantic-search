@@ -8,6 +8,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from tfidf_prepro import Tfidf_prepro
 from gensim.models import KeyedVectors
 import fasttext
+import gensim
+import spacy
 
 class Search():
     """
