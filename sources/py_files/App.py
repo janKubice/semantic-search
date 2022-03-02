@@ -44,15 +44,16 @@ def document_clicked(event):
 
     document_text = Label(document_win, text=document['text'], wraplength=450).pack()
 
-def load_queries(file:str, search:Search, top_n:int):
+def load_queries(file:str, search:Search, top_n:int, result_path:str):
     """Načte dotazy ze souboru, najde top_n nejlepších shod v dokumentech a uloží výsledky do souboru
 
     Args:
         file (str): cesta k dotazům
         search (Search): instance vyhledávače
         top_n (int): počet nejlepších dokumentů vůči dotazu
+        result:path (str): cesta a název souboru kam se uloží výsledky
     """
-    results = open('semantic-search/BP_data/results.txt', 'w+')
+    results = open(result_path, 'w+')
 
     with open(file, encoding="utf8") as f:
         queries = json.load(f)
@@ -67,18 +68,19 @@ def load_queries(file:str, search:Search, top_n:int):
             results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
         
 
-TO_FILE = False #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
+TO_FILE = True #Jestli se mají výsledky uložit do souboru, pokud je False spustí velice jednoduchá aplikace na vyzkoušení funkčnosti
 TRAIN = False #Zda se má W2V natrénovat a nebo použít uložený
 
 DOCUMENT_PATH = 'semantic-search/BP_data/czechData_test.json'
 QUERIES_PATH = 'semantic-search/BP_data/topicData.json'
-MODEL_PATH = 'semantic-search/BP_data/czech_m.vec'
+MODEL_PATH = 'semantic-search/BP_data/czech_m.bin'
+RESULT_FILE_NAME = 'semantic-search/BP_data/results.txt'
 
 TOP_N = 100
 
 searcher = Search(TRAIN, DOCUMENT_PATH, MODEL_PATH)
 if TO_FILE:
-    load_queries(QUERIES_PATH, searcher, TOP_N)
+    load_queries(QUERIES_PATH, searcher, TOP_N, RESULT_FILE_NAME)
     exit(0)
 else:
     win = Tk()

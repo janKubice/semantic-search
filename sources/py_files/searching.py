@@ -10,13 +10,14 @@ from gensim.models import KeyedVectors
 import fasttext
 import gensim
 import spacy
+from gensim.models.fasttext import load_facebook_model
 
 class Search():
     """
     Třída obsahuje metody na vyhledávání podobných dokumentů
     """
 
-    def __init__(self, train:bool, data_path:str, model_path:str = None, vector_size:int = 100):
+    def __init__(self, train:bool, data_path:str, model_path:str = None, vector_size:int = 300):
         """Konstruktor
 
         Args:
@@ -42,19 +43,17 @@ class Search():
         """
         self.df_docs = pd.read_csv('semantic-search/BP_data/docs_cleaned.csv')
 
-        if '.vec' in self.model_path:
-            embeding = dict()
-
-            with open(self.model_path, encoding='utf-8') as vec_file:
-                for i, line in enumerate(vec_file):
-                    token = line.split(' ')
-                    word = token[0]
-                    vector = np.asarray(token[1:], dtype='float32')
-                    embeding[word] = vector
-            
-            self.model = Word2Vec(embeding)
-        else:
+        if '.bin' in self.model_path:
+            self.model = load_facebook_model(self.model_path)
+        elif '.model' in self.model_path:
             self.model = Word2Vec.load(self.model_path)
+
+            for word in self.model.wv.key_to_index:
+                vector = self.model.wv.get_vector(word)
+
+                self.model.wv.key_to_index[self.prep.process_word(word)] = vector
+        else:
+            print('ERROR: Špatný formát načítaného modelu')
 
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
@@ -155,6 +154,8 @@ class Search():
         Returns:
             vector: vektor reprezentující dokument
         """
+        good = 0
+        bad = 0
         embeddings = []
         if len(doc_tokens)<1:
             return np.zeros(self.vector_size)
@@ -162,8 +163,12 @@ class Search():
             for tok in doc_tokens:
                 if tok in self.model.wv.key_to_index:
                     embeddings.append(self.model.wv.word_vec(tok))
-                else:
-                    embeddings.append(np.random.rand(self.vector_size))
+                    good += 1
+                else: 
+                    embeddings.append(np.random.rand(self.vector_size)) 
+                    bad += 1
+
+            print(good, bad)
             return np.mean(embeddings, axis=0)
 
 

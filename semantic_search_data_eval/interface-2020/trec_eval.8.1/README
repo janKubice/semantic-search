@@ -219,7 +219,7 @@ Major measures (again) with their relational names:
 num_ret        	Total number of documents retrieved over all queries
 num_rel        	Total number of relevant documents over all queries
 num_rel_ret    	Total number of relevant documents retrieved over all queries
-map            	Mean Average Precision (MAP)
+map            	Mean Average Precision (MAP) ------------ tuto metriku
 gm_ap          	Average Precision. Geometric Mean, q_score=log(MAX(map,.00001))
 R-prec         	R-Precision (Precision after R (= num-rel for topic) documents retrieved)
 bpref          	Binary Preference, top R judged nonrel
