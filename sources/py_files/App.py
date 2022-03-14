@@ -1,8 +1,19 @@
-from xgboost import train
 from searching import Search
 from gui import Gui
 
 def main(train, to_file, doc_path, model_path, model_name, q_path, top_n, result_file_name):
+    """Hlavní funkce která se spustí při zapnutí scriptu
+
+    Args:
+        train (_type_): _description_
+        to_file (_type_): _description_
+        doc_path (_type_): _description_
+        model_path (_type_): _description_
+        model_name (_type_): _description_
+        q_path (_type_): _description_
+        top_n (_type_): _description_
+        result_file_name (_type_): _description_
+    """
     searcher = Search(train, doc_path, model_path, model_name)
     model = searcher.get_model()
 

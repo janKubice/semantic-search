@@ -28,12 +28,12 @@ class Word2VecSearch(ModelSearch):
         self.tfidf = Tfidf_prepro()
 
         if train == True:
-            self.train(data_path)
+            self.model_train(data_path)
         else:
-            self.load(model_path, 'semantic-search/BP_data/docs_cleaned.csv')
+            self.model_load(model_path, 'semantic-search/BP_data/docs_cleaned.csv')
 
-    def train(self, data_path:str):
-        self.df_docs = self.load_data(data_path)
+    def model_train(self, data_path:str):
+        self.load_data(data_path)
         self.df_docs.index = self.df_docs['id'].values
         utils.clean_df(self.df_docs)
         utils.preprocess(self.df_docs)
@@ -61,10 +61,10 @@ class Word2VecSearch(ModelSearch):
         self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')        
         self.model.save('semantic-search/model/word2vec_model.model')
 
-    def save(self, save_path: str):
-        return super().save(save_path)
+    def model_save(self, save_path: str):
+        self.model.save(save_path + ".model")
 
-    def load(self, model_path, docs_path):
+    def model_load(self, model_path, docs_path):
         self.df_docs = pd.read_csv(docs_path)
 
         if '.bin' in model_path:
@@ -81,14 +81,8 @@ class Word2VecSearch(ModelSearch):
 
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
 
-    def load_data(self, path_docs:str) -> pd.DataFrame:
-        with open(path_docs, encoding="utf8") as f:
-            docs = json.load(f)
-
-        
-        df_docs = pd.DataFrame(docs)
-        df_docs = df_docs.drop("date", axis=1)
-        return df_docs
+    def load_data(self, path_docs: str):
+        return super().load_data(path_docs)
 
     def get_embedding_w2v(self, doc_tokens):
         good = 0

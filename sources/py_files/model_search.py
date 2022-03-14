@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 import pandas as pd
+import json
+import csv
+
 class ModelSearch(ABC):
 
     def __init__(self):
         super().__init__()
 
     @abstractmethod
-    def train(self, documents:pd.DataFrame):
+    def model_train(self, documents:pd.DataFrame):
         """Nastrénuje model
 
         Args:
@@ -14,24 +17,26 @@ class ModelSearch(ABC):
         """
         
     @abstractmethod
-    def save(self, save_path:str):
+    def model_save(self, save_path:str):
         """Uloží natrénovaný model
 
         Args:
-            save_path (str): cesta k uložení (například: C:/modely/)
+            save_path (str): cesta k uložení (například: C:/modely/muj_model)
         """
         pass
 
     @abstractmethod
-    def load(self, model_path:str):
+    def model_load(self, model_path:str):
         """
         Načte model
         """
         pass
 
     @abstractmethod
-    def load_data(self, path_docs:str) -> pd.DataFrame:
-        """Načte data
+    def load_data(self, path_docs:str):
+        """Načte dokumenty
+
+        Data musí mít formát id,doc,title
 
         Args:
             path_docs (str): cesta k souboru s dokumenty
@@ -39,7 +44,15 @@ class ModelSearch(ABC):
         Returns:
             pd.DataFrame: načtené dokumenty
         """
-        pass
+        if '.json' in path_docs:
+            with open(path_docs, encoding="utf8") as f:
+                docs = json.load(f)
+        elif '.tsv' in path_docs:
+            with open(path_docs, encoding="utf8") as f:
+                docs = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
+
+        df_docs = pd.DataFrame(docs)
+        self.df_docs = df_docs
 
     def get_embedding_w2v(self, doc_tokens):
         """Vrátí vektor reprezentujícíc dokument
