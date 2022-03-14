@@ -1,20 +1,13 @@
 from searching import Search
 from gui import Gui
+import argparse
+import sys
 
-def main(train, to_file, doc_path, model_path, model_name, q_path, top_n, result_file_name):
-    """Hlavní funkce která se spustí při zapnutí scriptu
-
-    Args:
-        train (_type_): _description_
-        to_file (_type_): _description_
-        doc_path (_type_): _description_
-        model_path (_type_): _description_
-        model_name (_type_): _description_
-        q_path (_type_): _description_
-        top_n (_type_): _description_
-        result_file_name (_type_): _description_
+def main(train:bool, to_file:bool, doc_path:str, model_path:str, model_name:str, q_path:str, top_n:int, result_file_name:str, vector_size):
     """
-    searcher = Search(train, doc_path, model_path, model_name)
+    Hlavní funkce která se spustí při zapnutí scriptu
+    """
+    searcher = Search(train, doc_path, model_path, model_name, vector_size)
     model = searcher.get_model()
 
     if to_file:
@@ -35,6 +28,20 @@ if __name__ == '__main__':
 
     TOP_N = 100
 
-    #TODO spuštění z příkazové řádky, použít argparser
     command_line = ''
-    main(TRAIN, TO_FILE, DOCUMENT_PATH, MODEL_PATH, MODEL, QUERIES_PATH, TOP_N, RESULT_FILE_NAME)
+
+    parser = argparse.ArgumentParser(description='Semantic search')
+    parser.add_argument("--train", action="store_true", dest="train", required=True)
+    parser.add_argument("--save", action="store_true", dest="save", required=True)
+    parser.add_argument("--doc-path", action="store", dest="doc_path", type=str, help='Cesta s souboru s dokumenty')
+    parser.add_argument('--model-path', action='store', dest='model_path', type=str, help="Cesta k již natrénovanému modelu", default=None)
+    parser.add_argument('--model-name', action='store', dest='model_name', choices=['w2v', 'tt', 'ca'], help="Název modelu který se využije. W2V = word2vec, tt = two towers, ca = cross attention", default='w2v')
+    parser.add_argument('--queries-path', action='store', dest='queries_path', help="Cesta k dotazům, využívá se pokud ukládám do souboru", type=str, default=None)
+    parser.add_argument('--top-n', action='store', dest='top_n', type=int, help='Počet vrácených nejlepších výsledků', default=50)
+    parser.add_argument('--result-name', action='store', dest='result_name', type=str, help='Kam se uloží výsledky k načteným queries', default=None)
+    parser.add_argument('--vector-size', action='store', dest='vector_size', type=int, help='Velikost vectoru kterým se bude reprezentovat slovo/dokument', default=300)
+
+    sys.argv = ['app.py', '--train', '--save', '--doc-path', "semantic-search/BP_data/czechData_test.json"]
+    arguments = parser.parse_args()
+
+    main(arguments.train, arguments.save, arguments.doc_path, arguments.model_path, arguments.model_name, arguments.queries_path, arguments.top_n, arguments.result_name, arguments.vector_size)
