@@ -24,15 +24,17 @@ class Word2VecSearch(ModelSearch):
         self.model_path = model_path
         self.vector_size = vector_size
 
-        self.prep = WordPreprocessing(deaccent=False)
+        self.prep = WordPreprocessing(deaccent=False, lemmatize=False)
         self.tfidf = Tfidf_prepro()
 
         if train == True:
             self.model_train(data_path)
         else:
-            self.model_load(model_path, 'semantic-search/BP_data/docs_cleaned.csv')
+            self.model_load(model_path, 'X:/Data/BP/docs_cleaned.csv')
 
     def model_train(self, data_path:str):
+        super().model_train(data_path)
+
         self.load_data(data_path)
         self.df_docs.index = self.df_docs['id'].values
         utils.clean_df(self.df_docs)
@@ -40,9 +42,8 @@ class Word2VecSearch(ModelSearch):
 
         self.df_docs.to_csv('semantic-search/BP_data/docs_cleaned.csv', index=False)
     
-        #TODO problém s ramkou -> potřeba 260gb na tfidf. Předelat ať se to nepočítá celé najednou ale postupně na části.
+        #TODO využít
         #tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
-        #self.df_docs = self.tfidf.delete_words(self.df_docs,tfidf_df)
 
         text = [x for x in self.df_docs['text']]
         title = [x for x in self.df_docs['title']]
@@ -56,19 +57,27 @@ class Word2VecSearch(ModelSearch):
             data.append(i.split())
 
         self.model = Word2Vec(data, vector_size=self.vector_size, min_count=2, window=5, sg=1, workers=4)
-        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
+        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
     
         self.df_docs.to_csv('semantic-search/BP_data/vectorized_data.csv')        
         self.model.save('semantic-search/model/word2vec_model.model')
 
     def model_save(self, save_path: str):
+        super().model_save(save_path)
         self.model.save(save_path + ".model")
 
     def model_load(self, model_path, docs_path):
+        #pouze výpis informačního textu
+        super().model_load(model_path, docs_path)
+
         self.df_docs = pd.read_csv(docs_path)
 
+        #Podle typu souboru se načte příslušný soubor
+        #Pokud je bin využije se načtený pomocí fasttext
         if '.bin' in model_path:
             self.model = load_facebook_model(model_path)
+
+        #Pokud se jedná o model načtou se vektory
         elif '.model' in model_path:
             self.model = Word2Vec.load(model_path)
 
@@ -79,15 +88,17 @@ class Word2VecSearch(ModelSearch):
         else:
             print('ERROR: Špatný formát načítaného modelu')
 
-        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding_w2v(x.split()))
+        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
 
     def load_data(self, path_docs: str):
         return super().load_data(path_docs)
 
-    def get_embedding_w2v(self, doc_tokens):
+    def get_embedding(self, doc_tokens):
+        #FIXME self.model.wv.key_to_index obsahuje divnou vocab, zkouknoutjestli metody na prepro fungují jak mají
         good = 0
         bad = 0
         embeddings = []
+        lines = []
         if len(doc_tokens)<1:
             return np.zeros(self.vector_size)
         else:
@@ -97,6 +108,7 @@ class Word2VecSearch(ModelSearch):
                     good += 1
                 else: 
                     embeddings.append(np.random.rand(self.vector_size)) 
+                    lines.append(tok)
                     bad += 1
 
             print(good, bad)
@@ -106,7 +118,7 @@ class Word2VecSearch(ModelSearch):
     def ranking_ir(self, query:str, n:int) -> pd.DataFrame:   
         query = self.prep.process_sentence(query)
 
-        vector=self.get_embedding_w2v(query.split())
+        vector=self.get_embedding(query.split())
 
         documents=self.df_docs[['id','title','text']].copy()
         documents['similarity']=self.df_docs['vector'].apply(lambda x: cosine_similarity(np.array(vector).reshape(1, -1),np.array(x).reshape(1, -1)).item())

@@ -1,8 +1,7 @@
 from tkinter.constants import WORD
 import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer, CountVectorizer, TfidfVectorizer
 import re
 
 class Tfidf_prepro:
@@ -20,15 +19,16 @@ class Tfidf_prepro:
             pd.dataframe: dataframe kde řádky jsou dokumenty a sloupce jsou slova, 
             každý prvek v tabulce obsahuje hodnotu td-idf pro dané slovo v daném dokumentu
         """
-        sents = docs.text.values
-        cv = CountVectorizer()
-        word_count_vector = cv.fit_transform(sents)
+        tfidf = TfidfVectorizer(max_df=0.8)
+        corpus = docs.text.values
+        print(corpus)
+        X = tfidf.fit_transform(corpus)
 
-        tfidf_transformer = TfidfTransformer()
-        X = tfidf_transformer.fit_transform(word_count_vector)
-
-        tf_idf = pd.DataFrame(X.toarray() ,columns=cv.get_feature_names())
+        tf_idf = pd.DataFrame(X.toarray() ,columns=X.get_feature_names())
         tf_idf.index = list(docs['id'])
+
+        print(tfidf.head())
+
         return tf_idf
 
     def delete_words(self, docs ,tf_idf):

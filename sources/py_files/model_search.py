@@ -15,6 +15,7 @@ class ModelSearch(ABC):
         Args:
             documents (pd.DataFrame): dokumenty na kterých se bude trénovat
         """
+        print('Trénování modelu...')
         
     @abstractmethod
     def model_save(self, save_path:str):
@@ -23,14 +24,14 @@ class ModelSearch(ABC):
         Args:
             save_path (str): cesta k uložení (například: C:/modely/muj_model)
         """
-        pass
+        print('Ukládání modelu...')
 
     @abstractmethod
-    def model_load(self, model_path:str):
+    def model_load(self, model_path:str, docs_path):
         """
         Načte model
         """
-        pass
+        print('Načítání modelu...')
 
     @abstractmethod
     def load_data(self, path_docs:str):
@@ -44,6 +45,8 @@ class ModelSearch(ABC):
         Returns:
             pd.DataFrame: načtené dokumenty
         """
+        print('Načítání dat...')
+
         if '.json' in path_docs:
             with open(path_docs, encoding="utf8") as f:
                 docs = json.load(f)
@@ -54,7 +57,7 @@ class ModelSearch(ABC):
         df_docs = pd.DataFrame(docs)
         self.df_docs = df_docs
 
-    def get_embedding_w2v(self, doc_tokens):
+    def get_embedding(self, doc_tokens):
         """Vrátí vektor reprezentujícíc dokument
 
         Args:

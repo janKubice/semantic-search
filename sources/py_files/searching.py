@@ -28,7 +28,7 @@ class Search():
         else:
             print('Zvolen neexistující model.')
             print('Použije se w2v.')
-            self.word2vec()
+            return self.word2vec()
 
     def load_queries(self, file:str, model:ModelSearch, top_n:int, result_path:str):
         """Načte dotazy ze souboru, najde top_n nejlepších shod v dokumentech a uloží výsledky do souboru
@@ -45,8 +45,6 @@ class Search():
             queries = json.load(f)
 
         df_queries = pd.DataFrame(queries)
-        #if ['description', 'narrative', 'lang'] in df_queries.columns:
-        #    df_queries.drop(['description', 'narrative', 'lang'], axis=1, inplace=True)
 
         for index,query in df_queries.iterrows():
             top_q = model.ranking_ir(query['title'], top_n)
@@ -60,7 +58,7 @@ class Search():
         return TwoTowersSearch()
 
     def cross_attention(self):
-        return CrossAttentionSearch()
+        return CrossAttentionSearch(self.train, self.doc_path, self.model_path)
         
 
     
