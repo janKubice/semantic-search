@@ -19,7 +19,10 @@ class Tfidf_prepro:
             pd.dataframe: dataframe kde řádky jsou dokumenty a sloupce jsou slova, 
             každý prvek v tabulce obsahuje hodnotu td-idf pro dané slovo v daném dokumentu
         """
+        #TODO otestovat co z toho leze
+        #INFO https://kavita-ganesan.com/python-keyword-extraction/#.Yj2N8-fMK3A
         tfidf = TfidfVectorizer(max_df=0.8)
+        print(tfidf)
         corpus = docs.text.values
         print(corpus)
         X = tfidf.fit_transform(corpus)

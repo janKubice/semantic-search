@@ -5,20 +5,46 @@ import json
 from word2vec_search import Word2VecSearch
 from two_towers_search import TwoTowersSearch
 from cross_attention_search import CrossAttentionSearch
+from word_preprocessing import WordPreprocessing
 
 class Search():
     """
     Třída obsahuje metody na vyhledávání podobných dokumentů
     """
 
-    def __init__(self, train, doc_path, model_path, model_name, vector_size:int = 300) -> None:
+    def __init__(
+        self, train:bool, save:bool, doc_path:str, model_path:str, model_name:str, tfidf_prepro:bool, 
+        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, vector_size:int = 300) -> None:
+        """Vytvoří objekt pro vyhledávání se zadaným nastavením
+
+        Args:
+            train (bool): zda se má model natrénovat a nebo použít již natrénovaný
+            doc_path (str): cesta k dokumentům ve kterých se bude vyhledávat
+            model_path (str): cesta k uložení modelu a nebo k načtení modelu, záleží na volbě *train*
+            model_name (str): jméno modelu který se má použít
+            tfidf_prepro (bool): volba zda se má využít tfidf v preprocesingu
+            lemma (bool): Zda se při předzpracování má použít lemmatizace
+            remove_stopwords (bool): Zda se při předzpracování mají odstranit stop slova
+            deaccent (bool): Zda se při předzpracování má odstranit akcent
+            lang (str): Využitý jazyk při předzpracování
+            vector_size (int, optional): velikost vektoru reprezentující dokument, využívá se pouze pro w2v. Defaults to 300.
+        """
         self.train = train
+        self.save = save
         self.doc_path = doc_path
         self.model_path = model_path
         self.model_name = model_name
         self.vector_size = vector_size
+        self.tfidf_prepro = tfidf_prepro
+        self.lemma = lemma
+        self.stopwords = remove_stopwords
+        self.deaccent = deaccent
+        self.lang = lang
+
+        self.prepro = WordPreprocessing(True, self.lemma, self.stopwords, self.deaccent, self.lang)
 
     def get_model(self) -> ModelSearch:
+        """Podle volby vrátí model, při nesprávném zadání modelu vrátí defaultní model Word2vec"""
         if self.model_name == 'w2v':
             return self.word2vec()
         elif self.model_name == 'tt':
@@ -46,19 +72,22 @@ class Search():
 
         df_queries = pd.DataFrame(queries)
 
-        for index,query in df_queries.iterrows():
+        for _, query in df_queries.iterrows():
             top_q = model.ranking_ir(query['title'], top_n)
             for idx, res in top_q.iterrows():
                 results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
 
     def word2vec(self):
-        return Word2VecSearch(self.train, self.doc_path, self.model_path, self.vector_size)
+        """Vrátí model pro word2vec"""
+        return Word2VecSearch(self.train, self.doc_path, self.model_path, self.tfidf_prepro, self.vector_size, self.prepro)
 
     def two_towers(self):
+        """Vrátí model pro two tower"""
         return TwoTowersSearch()
 
     def cross_attention(self):
-        return CrossAttentionSearch(self.train, self.doc_path, self.model_path)
+        """Vráít model pro cross attention"""
+        return CrossAttentionSearch(self.train, self.doc_path, self.model_path, self.tfidf_prepro, self.prepro)
         
 
     

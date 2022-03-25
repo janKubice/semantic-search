@@ -8,11 +8,14 @@ from sentence_transformers.cross_encoder.evaluation import \
 from torch.utils.data import DataLoader
 
 from model_search import ModelSearch
+from word_preprocessing import WordPreprocessing
+
 
 
 class CrossAttentionSearch(ModelSearch):
 
-    def __init__(self, train, docs_path, model_path):
+    def __init__(self, train:bool, data_path:str, model_path:str = None, tfidf_prepro = False, 
+                prepro: WordPreprocessing = WordPreprocessing()):
 
         """
             Modely k použití a vyzkoušení:
@@ -20,16 +23,14 @@ class CrossAttentionSearch(ModelSearch):
             : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
             : a nějaký od favky #QUESTION, zapomněl jsem
         """
+        super().__init__(train, data_path, model_path, tfidf_prepro, prepro)
+
         self.model = CrossEncoder('Seznam/small-e-czech', num_labels=1)
-
-        self.data_path = docs_path
         self.df_docs = None
-        self.model_path = model_path
-
-        self.df_docs = self.load_data(self.data_path)
+        self.df_docs = self.load_data(super().data_path)
 
         if train:
-            self.model_train(self.data_path)
+            self.model_train(super().data_path)
     
     def model_train(self, data_path:str):
         train_doc = self.df_docs.sample(frac=0.8) 
@@ -54,13 +55,13 @@ class CrossAttentionSearch(ModelSearch):
           evaluator=evaluator,
           epochs=num_epochs,
           warmup_steps=warmup_steps,
-          output_path=self.model_path)
+          output_path=super().model_path)
 
     def model_load(self, model_path: str):
-        self.model = CrossEncoder(self.model_path)
+        self.model = CrossEncoder(super().model_path)
 
     def model_save(self, save_path: str):
-        self.model.save(self.model_path)
+        self.model.save(super().model_path)
 
     def load_data(self, path_docs: str):
         return super().load_data(path_docs)
@@ -83,10 +84,11 @@ class CrossAttentionSearch(ModelSearch):
         #Seřadím skóre
         results = [{'input': inp, 'score': score} for inp, score in zip(model_inputs, scores)]
         results = sorted(results, key=lambda x: x['score'], reverse=True)
+        results = results[:n]
         print(results)
 
         print("Query:", query)
-        for hit in results[:n]:
+        for hit in results:
             print("Score: {:.2f}".format(hit['score']), "\t", hit['input'][1])
 
         #TODO vytvořit a vrátit DF

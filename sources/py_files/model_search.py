@@ -2,11 +2,23 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import json
 import csv
+from word_preprocessing import WordPreprocessing
+from tfidf_prepro import Tfidf_prepro
+
 
 class ModelSearch(ABC):
 
-    def __init__(self):
+    def __init__(self, train:bool, data_path:str, model_path:str = None, tfidf_prepro = False, 
+                prepro: WordPreprocessing = WordPreprocessing()):
         super().__init__()
+        self.train = train
+        self.data_path = data_path
+        self.model_path = model_path
+        self.tfidf_prepro = tfidf_prepro
+        self.prepro = prepro
+
+        if self.tfidf_prepro:
+            self.tfidf = Tfidf_prepro()
 
     @abstractmethod
     def model_train(self, documents:pd.DataFrame):
@@ -55,7 +67,13 @@ class ModelSearch(ABC):
                 docs = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
 
         df_docs = pd.DataFrame(docs)
-        self.df_docs = df_docs
+        df_docs.index = df_docs['id'].values
+        return df_docs
+
+    def process_documents(self):
+        """Provede zpracování dokumentů 
+        """
+        pass
 
     def get_embedding(self, doc_tokens):
         """Vrátí vektor reprezentujícíc dokument

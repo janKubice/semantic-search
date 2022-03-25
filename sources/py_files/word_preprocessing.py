@@ -1,6 +1,7 @@
 import unicodedata
 from regex._regex_core import UNICODE
 from spacy.lang.cs import Czech, STOP_WORDS
+from spacy.lang.en import English
 import simplemma
 import re
 
@@ -24,7 +25,12 @@ class WordPreprocessing:
         self.deaccent = deaccent
         self.langdata = simplemma.load_data(lang)
 
-        self.nlp = Czech()
+        if lang == 'cs':
+            self.nlp = Czech()
+        elif lang == 'en':
+            self.nlp = English()
+        else:
+            self.nlp = Czech()
 
     def process_word(self, word: str) -> str:
         """Zpracuje jedno slovo a vrátí jeho upravenou podobu, pokud je slovo ve stop slovech vrátí pouze ""
