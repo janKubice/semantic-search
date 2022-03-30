@@ -14,7 +14,7 @@ class Search():
 
     def __init__(
         self, train:bool, save:bool, doc_path:str, model_path:str, model_name:str, tfidf_prepro:bool, 
-        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, vector_size:int = 300) -> None:
+        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, seznam:str, save_name:str, vector_size:int = 300) -> None:
         """Vytvoří objekt pro vyhledávání se zadaným nastavením
 
         Args:
@@ -27,6 +27,8 @@ class Search():
             remove_stopwords (bool): Zda se při předzpracování mají odstranit stop slova
             deaccent (bool): Zda se při předzpracování má odstranit akcent
             lang (str): Využitý jazyk při předzpracování
+            seznam (str): Cesta k seznam dokumentu
+            save_name (str): Cesta i s názvem modelu bez koncovky, program sám určí koncovku
             vector_size (int, optional): velikost vektoru reprezentující dokument, využívá se pouze pro w2v. Defaults to 300.
         """
         self.train = train
@@ -40,6 +42,8 @@ class Search():
         self.stopwords = remove_stopwords
         self.deaccent = deaccent
         self.lang = lang
+        self.seznam = seznam
+        self.save_name = save_name
 
         self.prepro = WordPreprocessing(True, self.lemma, self.stopwords, self.deaccent, self.lang)
 
@@ -79,7 +83,7 @@ class Search():
 
     def word2vec(self):
         """Vrátí model pro word2vec"""
-        return Word2VecSearch(self.train, self.doc_path, self.model_path, self.tfidf_prepro, self.vector_size, self.prepro)
+        return Word2VecSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.vector_size, self.prepro)
 
     def two_towers(self):
         """Vrátí model pro two tower"""
@@ -87,7 +91,7 @@ class Search():
 
     def cross_attention(self):
         """Vráít model pro cross attention"""
-        return CrossAttentionSearch(self.train, self.doc_path, self.model_path, self.tfidf_prepro, self.prepro)
+        return CrossAttentionSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.prepro)
         
 
     

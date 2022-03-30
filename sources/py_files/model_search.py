@@ -4,15 +4,20 @@ import json
 import csv
 from word_preprocessing import WordPreprocessing
 from tfidf_prepro import Tfidf_prepro
+import utils
 
 
 class ModelSearch(ABC):
-
-    def __init__(self, train:bool, data_path:str, model_path:str = None, tfidf_prepro = False, 
+    """
+    Třída slouží jako bázová třída pro ostatní modely
+    """
+    def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
                 prepro: WordPreprocessing = WordPreprocessing()):
         super().__init__()
         self.train = train
         self.data_path = data_path
+        self.seznam_path = seznam_path
+        self.save_name = save_name
         self.model_path = model_path
         self.tfidf_prepro = tfidf_prepro
         self.prepro = prepro
@@ -65,15 +70,23 @@ class ModelSearch(ABC):
         elif '.tsv' in path_docs:
             with open(path_docs, encoding="utf8") as f:
                 docs = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
+        else:
+            print('Nepodporovaný formát dokumentů')
+            exit()
 
         df_docs = pd.DataFrame(docs)
         df_docs.index = df_docs['id'].values
         return df_docs
 
-    def process_documents(self):
+    def process_documents(self, documents):
         """Provede zpracování dokumentů 
         """
-        pass
+        utils.clean_df(documents, self.prepro)
+        utils.preprocess(documents, self.prepro)
+    
+        #TODO využít
+        #if self.tfidf_prepro:
+        #    tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
 
     def get_embedding(self, doc_tokens):
         """Vrátí vektor reprezentujícíc dokument
