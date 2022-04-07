@@ -24,7 +24,6 @@ class Word2VecSearch(ModelSearch):
         self.df_docs = None
         self.model = None
         self.vector_size = vector_size
-
         if self.train == True:
             self.model_train(self.data_path)
         else:
@@ -75,17 +74,18 @@ class Word2VecSearch(ModelSearch):
         self.model.save(save_path + ".model")
 
     def model_load(self, model_path:str, docs_path:str):
-        super().model_load(model_path,docs_path)
-
         self.df_docs = self.load_data(docs_path)
 
         #Podle typu souboru se načte příslušný soubor s vektory
         #Pokud je bin využije se načtený pomocí fasttext
+        #INFO na načítaná slova není použit žádný preprocessing
         if '.bin' in model_path:
+            print('Načítání .bin souboru')
             self.model = load_facebook_model(model_path)
 
         #Pokud se jedná o model načtou se jeho vektory
         elif '.model' in model_path:
+            print('NačÍtání .model souboru')
             self.model = Word2Vec.load(model_path)
 
             for word in self.model.wv.key_to_index:
@@ -94,7 +94,7 @@ class Word2VecSearch(ModelSearch):
         else:
             print('ERROR: Špatný formát načítaného modelu')
 
-        #self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
+        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
 
     def load_data(self, path_docs: str):
         return super().load_data(path_docs)
@@ -122,8 +122,8 @@ class Word2VecSearch(ModelSearch):
 
         #Vytvořím kopii dokumentů, spočítám podobnost, seřadím podle podobnosti a vrátím n nejlepších
         documents=self.df_docs[['id','title','text']].copy()
-        documents['similarity'] = self.df_docs['vector'].apply(lambda x: cosine_similarity(np.array(vector).reshape(1, -1),np.array(x).reshape(1, -1)).item())
-        documents.sort_values(by='similarity',ascending=False,inplace=True)
+        documents['score'] = self.df_docs['vector'].apply(lambda x: cosine_similarity(np.array(vector).reshape(1, -1),np.array(x).reshape(1, -1)).item())
+        documents.sort_values(by='score',ascending=False,inplace=True)
         
         return documents.head(n).reset_index(drop=True)
 

@@ -1,4 +1,3 @@
-from unittest import result
 from searching import Search
 from gui import Gui
 import argparse
@@ -74,8 +73,8 @@ def main(train, to_file, save, doc_path, model_path, model_name, queries_path,
     Hlavní funkce která se spustí při zapnutí scriptu
     """
     #Všechny parametry musím přetypovat protože se jedná o stringy
-    searcher = Search(bool(train), bool(save), doc_path, model_path, model_name, bool(tfidf_prepro), bool(lemma), 
-                        bool(stopwords), bool(deaccent), lang, seznam, save_name, int(vector_size))
+    searcher = Search(eval(train), eval(save), doc_path, model_path, model_name, eval(tfidf_prepro), eval(lemma), 
+                        eval(stopwords), eval(deaccent), lang, seznam, save_name, int(vector_size))
     
     model = searcher.get_model()
 

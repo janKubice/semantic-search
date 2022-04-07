@@ -100,6 +100,7 @@ class WordPreprocessing:
         text = re.sub(r'^https?:\/\/.*[\r\n]*', '', text)
         text=re.sub('[^A-Za-z0-9]+ ', ' ', text)
         text=re.sub('"().,_', '',text)
+        text=re.sub('_', '', text)
         return text
 
     def process_sentence(self, sentence:str):

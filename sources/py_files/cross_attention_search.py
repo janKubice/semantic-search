@@ -22,19 +22,22 @@ class CrossAttentionSearch(ModelSearch):
 
         """
             Modely k použití a vyzkoušení:
-            : https://huggingface.co/Seznam/small-e-czech
+            : https://huggingface.co/Seznam/small-e-czech #BUG vyhodí runtime chybu s velikostí tenzoru
             : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
             : a nějaký od favky #QUESTION, zapomněl jsem
         """
         super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro)
 
-        self.model = CrossEncoder('Seznam/small-e-czech', num_labels=1)
+        self.model = CrossEncoder('sentence-transformers/paraphrase-multilingual-mpnet-base-v2', num_labels=1)
         self.df_docs = None
 
         if train:
             self.model_train(self.data_path)
+        else:
+            pass #TODO 
     
     def model_train(self, data_path:str):
+        #INFO převzaté odsud https://github.com/UKPLab/sentence-transformers/blob/master/examples/training/cross-encoder/training_stsbenchmark.py
         super().model_train(data_path)
 
         #if len(self.save_name) > 0 & exists(self.save_name):
@@ -48,22 +51,15 @@ class CrossAttentionSearch(ModelSearch):
         seznam_df['label'] = seznam_df['label'].astype(float, errors='raise')
         self.process_documents(seznam_df)
 
-        train_doc = seznam_df.sample(frac=0.8) 
-        test_doc = seznam_df.drop(train_doc.index)
         samples_train = []
-        samples_test = []
 
-        for _, row in train_doc.iterrows():
+        for _, row in seznam_df.iterrows():
             samples_train.append(InputExample(texts=[row['query'], row['title']], label=row['label']))
             samples_train.append(InputExample(texts=[row['title'], row['query']], label=row['label']))
 
-        for _, row in test_doc.iterrows():
-            samples_train.append(InputExample(texts=[row['query'], row['title']], label=row['label']))
-
         train_dataloader = DataLoader(samples_train, shuffle=True, batch_size=32)
-        evaluator = CECorrelationEvaluator.from_input_examples(samples_test, name='sts-dev')
 
-        num_epochs = 1 #EDIT 4
+        num_epochs = 1 
         warmup_steps = math.ceil(len(train_dataloader) * num_epochs * 0.1)
 
         self.model.fit(train_dataloader=train_dataloader,
@@ -99,20 +95,16 @@ class CrossAttentionSearch(ModelSearch):
         #INFO https://github.com/UKPLab/sentence-transformers/blob/master/examples/applications/cross-encoder/cross-encoder_usage.py
         # Rankování query
 
-        #Vytvořím všechny dvojice query a documentu, predikuju jejjich scóre vzniklých páru [query, doc]
+        
         ids = [id for id in self.df_docs['id']]
+        #Vytvořím všechny dvojice query a documentu, predikuju jejjich scóre vzniklých páru [query, doc]
         model_inputs = [[query, doc] for doc in self.df_docs['text']]
-        print(model_inputs[:2])
         scores = self.model.predict(model_inputs, num_workers = 4, batch_size=32)
 
         #Seřadím skóre
-        results = [{'input': inp, 'score': score} for inp, score in zip(model_inputs, scores)]
+        results = [{'id':id, 'input': inp, 'score': score} for id, inp, score in zip(ids, model_inputs, scores)]
         results = sorted(results, key=lambda x: x['score'], reverse=True)
-        results = results[:n]
-        print(results)
 
-        print("Query:", query)
-        for hit in results:
-            print("Score: {:.2f}".format(hit['score']), "\t", hit['input'][1])
-        exit()
-        #TODO vytvořit a vrátit DF
+        dataframe = pd.DataFrame(results).head(n).reset_index(drop=True)
+
+        return dataframe

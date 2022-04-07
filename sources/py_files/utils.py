@@ -1,7 +1,5 @@
-from base64 import encode
-from word_preprocessing import WordPreprocessing
+from sources.py_files.word_preprocessing import WordPreprocessing
 import pandas as pd
-from unidecode import unidecode
 import csv
 
 IGNORE_MASK = ['id', 'label'] #Jaké sloupce sa mají ignorovat při zpracování
@@ -15,7 +13,6 @@ def clean_df(df:pd.DataFrame, prepro:WordPreprocessing):
     for col in df.columns:
         if col in IGNORE_MASK:
             continue
-        #df[col] = df[col].apply(lambda x: unidecode(x, "utf-8"))
         df[col] = df[col].apply(lambda x: prepro.clean_text(x))
 
 def preprocess(df:pd.DataFrame, prepro:WordPreprocessing):

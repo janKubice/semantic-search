@@ -31,6 +31,7 @@ class Search():
             save_name (str): Cesta i s názvem modelu bez koncovky, program sám určí koncovku
             vector_size (int, optional): velikost vektoru reprezentující dokument, využívá se pouze pro w2v. Defaults to 300.
         """
+        
         self.train = train
         self.save = save
         self.doc_path = doc_path
@@ -69,6 +70,7 @@ class Search():
             top_n (int): počet nejlepších dokumentů vůči dotazu
             result:path (str): cesta a název souboru kam se uloží výsledky
         """
+        print('Načítání dotazů a hledání relevantních odpovědí')
         results = open(result_path, 'w+')
 
         with open(file, encoding="utf8") as f:
@@ -79,7 +81,7 @@ class Search():
         for _, query in df_queries.iterrows():
             top_q = model.ranking_ir(query['title'], top_n)
             for idx, res in top_q.iterrows():
-                results.write(f"{query['id']} 0 {res['id']} {idx} {res['similarity']} 0\n")
+                results.write(f"{query['id']} 0 {res['id']} {idx} {res['score']} 0\n")
 
     def word2vec(self):
         """Vrátí model pro word2vec"""
