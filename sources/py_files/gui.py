@@ -1,5 +1,5 @@
 from tkinter import *
-from model_search import ModelSearch
+from sources.py_files.model_search import ModelSearch
 import pandas as pd
 import json
 

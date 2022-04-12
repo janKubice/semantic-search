@@ -1,6 +1,6 @@
 import pandas as pd
-from model_search import ModelSearch
-from sentence_transformers.cross_encoder import CrossEncoder
+from sentence_transformers import SentenceTransformer, util
+from sources.py_files.model_search import ModelSearch
 
 class TwoTowersSearch(ModelSearch):
 
@@ -21,7 +21,7 @@ class TwoTowersSearch(ModelSearch):
         self.warmup_steps = None
         self.model_save_path = None
 
-        self.model = CrossEncoder('distilroberta-base', num_labels=1)
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
         if train == True:
             self.model_train(data_path)

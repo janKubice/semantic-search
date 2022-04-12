@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import json
 import csv
-from word_preprocessing import WordPreprocessing
-from tfidf_prepro import Tfidf_prepro
-import utils
+from sources.py_files.word_preprocessing import WordPreprocessing
+from sources.py_files.tfidf_prepro import Tfidf_prepro
+import sources.py_files.utils
 
 
 class ModelSearch(ABC):
@@ -81,8 +81,8 @@ class ModelSearch(ABC):
     def process_documents(self, documents):
         """Provede zpracování dokumentů 
         """
-        utils.clean_df(documents, self.prepro)
-        utils.preprocess(documents, self.prepro)
+        sources.py_files.utils.clean_df(documents, self.prepro)
+        sources.py_files.utils.preprocess(documents, self.prepro)
     
         #TODO využít
         #if self.tfidf_prepro:

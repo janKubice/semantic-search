@@ -1,9 +1,12 @@
-from searching import Search
-from gui import Gui
+from sources.py_files.searching import Search
+from sources.py_files.gui import Gui
 import argparse
 import sys
 from pathlib import Path
 import configparser
+
+SUCCESSFUL_END = 0
+INPUT_ERROR_END = -1
 
 def read_config(path_to_config) -> list:
     """Přečte config a vrátí ho jako příkazovou řádku která se nastaví argparseru
@@ -80,7 +83,7 @@ def main(train, to_file, save, doc_path, model_path, model_name, queries_path,
 
     if bool(to_file):
         searcher.load_queries(queries_path, model, int(top_n), result_name)
-        exit(0)
+        exit(SUCCESSFUL_END)
     else:
         Gui(model, doc_path)
 
@@ -112,7 +115,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 3:
         print('Musí být zadaný alespoň jeden parametr\nHELP\n---------------------------')
         parser.print_help()
-        exit()
+        exit(INPUT_ERROR_END)
     
     if '--config-path' in sys.argv:
         print('Načítání z konfiguračního souboru')
@@ -120,7 +123,7 @@ if __name__ == '__main__':
     else:
         print('Neplatný příkaz')
         parser.print_help()
-        exit()
+        exit(INPUT_ERROR_END)
 
     arguments = parser.parse_args()
     #TODO zkusit na metacentru natrénovat a vyhodnotit w2v

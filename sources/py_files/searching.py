@@ -1,11 +1,11 @@
-from model_search import ModelSearch
+from sources.py_files.model_search import ModelSearch
 import pandas as pd
 import json
 
-from word2vec_search import Word2VecSearch
-from two_towers_search import TwoTowersSearch
-from cross_attention_search import CrossAttentionSearch
-from word_preprocessing import WordPreprocessing
+from sources.py_files.word2vec_search import Word2VecSearch
+from sources.py_files.two_towers_search import TwoTowersSearch
+from sources.py_files.cross_attention_search import CrossAttentionSearch
+from sources.py_files.word_preprocessing import WordPreprocessing
 
 class Search():
     """

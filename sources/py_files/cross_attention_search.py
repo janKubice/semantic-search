@@ -9,11 +9,14 @@ from sentence_transformers.cross_encoder.evaluation import \
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 
-from model_search import ModelSearch
-from word_preprocessing import WordPreprocessing
-import utils
+from sources.py_files.model_search import ModelSearch
+from sources.py_files.word_preprocessing import WordPreprocessing
+import sources.py_files.utils
 
-
+MAX_LENGTH = 512
+BATCH_SIZE = 32
+WARMUP_COEF = 0.1
+WORKERS = 4
 
 class CrossAttentionSearch(ModelSearch):
 
@@ -24,11 +27,11 @@ class CrossAttentionSearch(ModelSearch):
             Modely k použití a vyzkoušení:
             : https://huggingface.co/Seznam/small-e-czech #BUG vyhodí runtime chybu s velikostí tenzoru
             : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
-            : a nějaký od favky #QUESTION, zapomněl jsem
+            : 
         """
         super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro)
 
-        self.model = CrossEncoder('sentence-transformers/paraphrase-multilingual-mpnet-base-v2', num_labels=1)
+        self.model = CrossEncoder('UWB-AIR/Czert-B-base-cased', num_labels=1, max_length=MAX_LENGTH)
         self.df_docs = None
 
         if train:
@@ -47,7 +50,7 @@ class CrossAttentionSearch(ModelSearch):
         self.df_docs = self.load_data(data_path)
         self.process_documents(self.df_docs)
 
-        seznam_df = utils.load_seznam(self.seznam_path)
+        seznam_df = sources.py_files.utils.load_seznam(self.seznam_path)
         seznam_df['label'] = seznam_df['label'].astype(float, errors='raise')
         self.process_documents(seznam_df)
 
@@ -57,10 +60,10 @@ class CrossAttentionSearch(ModelSearch):
             samples_train.append(InputExample(texts=[row['query'], row['title']], label=row['label']))
             samples_train.append(InputExample(texts=[row['title'], row['query']], label=row['label']))
 
-        train_dataloader = DataLoader(samples_train, shuffle=True, batch_size=32)
+        train_dataloader = DataLoader(samples_train, shuffle=True, batch_size=BATCH_SIZE)
 
         num_epochs = 1 
-        warmup_steps = math.ceil(len(train_dataloader) * num_epochs * 0.1)
+        warmup_steps = math.ceil(len(train_dataloader) * num_epochs * WARMUP_COEF)
 
         self.model.fit(train_dataloader=train_dataloader,
           epochs=num_epochs,
@@ -99,7 +102,7 @@ class CrossAttentionSearch(ModelSearch):
         ids = [id for id in self.df_docs['id']]
         #Vytvořím všechny dvojice query a documentu, predikuju jejjich scóre vzniklých páru [query, doc]
         model_inputs = [[query, doc] for doc in self.df_docs['text']]
-        scores = self.model.predict(model_inputs, num_workers = 4, batch_size=32)
+        scores = self.model.predict(model_inputs, num_workers = WORKERS, batch_size=BATCH_SIZE)
 
         #Seřadím skóre
         results = [{'id':id, 'input': inp, 'score': score} for id, inp, score in zip(ids, model_inputs, scores)]

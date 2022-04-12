@@ -1,13 +1,17 @@
-from word_preprocessing import WordPreprocessing
+from sources.py_files.word_preprocessing import WordPreprocessing
 import pandas as pd
 from unidecode import unidecode
 from gensim.models import Word2Vec
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from gensim.models.fasttext import load_facebook_model
-from model_search import ModelSearch
-import utils
+from sources.py_files.model_search import ModelSearch
+import sources.py_files.utils as ut
 import os
+
+SG = 1 #trénovací algoritmus - 1 pro skip-gram, jinak CBOW
+MIN_COUNT = 20
+WORKERS = 4
 
 class Word2VecSearch(ModelSearch):
 
@@ -45,7 +49,7 @@ class Word2VecSearch(ModelSearch):
             text.append(t)
 
         #Extrahuji texty ze seznam datasetu
-        seznam_df = utils.load_seznam(self.seznam_path)
+        seznam_df = ut.load_seznam(self.seznam_path)
         self.process_documents(seznam_df)
 
         seznam_docs = [x for x in seznam_df['doc']]
@@ -61,7 +65,7 @@ class Word2VecSearch(ModelSearch):
         data = [s.split() for s in text]
 
         #Vytvoření a natrénování modelu
-        self.model = Word2Vec(data, vector_size=self.vector_size, min_count=20, window=5, sg=1, workers=32)
+        self.model = Word2Vec(data, vector_size=self.vector_size, min_count=MIN_COUNT, sg=SG, workers=WORKERS)
 
         self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
         self.df_docs.to_csv(f'{os.path.dirname(self.data_path)}/docs_cleaned.csv', index=False)
