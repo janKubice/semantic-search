@@ -1,5 +1,4 @@
 from sources.py_files.searching import Search
-from sources.py_files.gui import Gui
 import argparse
 import sys
 from pathlib import Path
@@ -19,11 +18,11 @@ def read_config(path_to_config) -> list:
     """
     path = Path(path_to_config)
     if not path.is_file():
-        print('Neplatný konfigurační soubor.')
-        exit()
+        print('Neplatny konfiguracni soubor - neexistuje.')
+        exit(INPUT_ERROR_END)
     if not '.config' in path_to_config:
-        print('Neplatný konfigrační soubor.')
-        exit()
+        print('Neplatny konfigracni soubor - spatna koncovka.')
+        exit(INPUT_ERROR_END)
 
     config = configparser.ConfigParser()
     config.read(path_to_config)
@@ -37,6 +36,7 @@ def read_config(path_to_config) -> list:
     seznam_path = config.get('PATHS', 'seznam_path')
 
     model_name = config.get('MODELS', 'model_name')
+    transformer_name = config.get('MODELS', 'transformer_model')
     train = config.get('MODELS', 'train')
     save = config.get('MODELS', 'save')
     vector_size = config.get('MODELS', 'vector_size')
@@ -48,13 +48,13 @@ def read_config(path_to_config) -> list:
     lang = config.get('PREPRO', 'lang')
 
     top_n = config.get('SEARCH', 'top_n')
-    to_file = config.get('SEARCH', 'to_file')
+
+    workers = config.get('OTHERS', 'workers')
 
     #Vytvořím si string jako z příkazové řádky
     return ['app.py',
             '--train', train,
             '--save', save,
-            '--to-file', to_file,
             '--tfidf-prepro', tfidf,
             '--doc-path', doc_path,
             '--model-path', model_path,
@@ -68,36 +68,39 @@ def read_config(path_to_config) -> list:
             '--stopwords', stopwords,
             '--deaccent', deaccent,
             '--lang', lang,
-            '--seznam', seznam_path]
+            '--seznam', seznam_path,
+            '--transformer-name', transformer_name,
+            '--workers', workers]
 
-def main(train, to_file, save, doc_path, model_path, model_name, queries_path, 
-        top_n, result_name, vector_size, tfidf_prepro, lemma, stopwords, deaccent, lang, seznam, save_name):
+def main(train, save, doc_path, model_path, model_name, queries_path, 
+        top_n, result_name, vector_size, tfidf_prepro, lemma, stopwords, deaccent, lang, seznam, save_name, transformer_name, workers):
     """
     Hlavní funkce která se spustí při zapnutí scriptu
     """
     #Všechny parametry musím přetypovat protože se jedná o stringy
-    searcher = Search(eval(train), eval(save), doc_path, model_path, model_name, eval(tfidf_prepro), eval(lemma), 
-                        eval(stopwords), eval(deaccent), lang, seznam, save_name, int(vector_size))
+    try:
+        searcher = Search(eval(train), eval(save), doc_path, model_path, model_name, eval(tfidf_prepro), eval(lemma), 
+                        eval(stopwords), eval(deaccent), lang, seznam, save_name, transformer_name, int(vector_size), int(workers))
+    except:
+        print('Nektery z parametru nema spravny format.')
+        exit(INPUT_ERROR_END)
     
     model = searcher.get_model()
+    model.start()
 
-    if bool(to_file):
-        searcher.load_queries(queries_path, model, int(top_n), result_name)
-        exit(SUCCESSFUL_END)
-    else:
-        Gui(model, doc_path)
+    searcher.load_queries(queries_path, model, int(top_n), result_name)
+    exit(SUCCESSFUL_END)
 
 if __name__ == '__main__':   
     #Nadefinování argparser argumentů 
     parser = argparse.ArgumentParser(description='Semantic search')
     parser.add_argument('--config-path', action='store', dest='config', help='Cesta ke konfiguračnímu souboru pro usnadnění práce s programem')
-    parser.add_argument("--train", action="store", dest="train", help='Zda se má moddel natrénovat a nebo použít již natrénovaný')
-    parser.add_argument("--save", action="store", dest="save", help='Zda se má model uložit', default=True)
-    parser.add_argument('--to-file', action='store', dest='to_file', help='Zda se výsledky vyhledávání mají uložit do souboru')
+    parser.add_argument('--train', action='store', dest="train", help='Zda se má moddel natrénovat a nebo použít již natrénovaný')
+    parser.add_argument('--save', action='store', dest="save", help='Zda se má model uložit', default=True)
     parser.add_argument('--tfidf-prepro', action='store', dest='tfidf_prepro', help='Zda se má využít tfidf při předzpracování')
-    parser.add_argument("--doc-path", action="store", dest="doc_path", type=str, help='Cesta s souboru s dokumenty')
+    parser.add_argument('--doc-path', action="store", dest="doc_path", type=str, help='Cesta s souboru s dokumenty')
     parser.add_argument('--model-path', action='store', dest='model_path', type=str, help="Cesta k již natrénovanému modelu", default=None)
-    parser.add_argument('--model-name', action='store', dest='model_name', choices=['w2v', 'tt', 'ca'], help="Název modelu který se využije. W2V = word2vec, tt = two towers, ca = cross attention")
+    parser.add_argument('--model-name', action='store', dest='model_name', choices=['w2v', 'tt', 'ca', 'ct'], help="Název modelu který se využije. W2V = word2vec, tt = two towers, ca = cross attention, ct = kombinace ca a tt")
     parser.add_argument('--model-path-save', action='store', dest='save_name', help='Cesta k uložení souboru, bez žádých koncovek, program sám určí koncovku')
     parser.add_argument('--queries-path', action='store', dest='queries_path', help="Cesta k dotazům, využívá se pokud ukládám do souboru", type=str, default=None)
     parser.add_argument('--top-n', action='store', dest='top_n', type=int, help='Počet vrácených nejlepších výsledků', default=100)
@@ -108,26 +111,31 @@ if __name__ == '__main__':
     parser.add_argument('--deaccent', action='store', dest='deaccent', help='Využití deaccentu při předzpracování')
     parser.add_argument('--seznam', action='store', dest='seznam', help='Cesta k dokumentu od seznamu')
     parser.add_argument('--lang', action='store', dest='lang', type=str, help='Jazyk textu')
+    parser.add_argument('--transformer-name', action='store', dest='transformer_name', type=str, help='Jaký předtrénovaný model bude využit pro Transformer')
+    parser.add_argument('--workers', action='store', dest='workers', type=int, help='Kolik bude potecionálně využito vláken', default=1)
 
     #INFO Testovací příkazová řádka
+    #TODO Nezapomenout odstranit do produkce
     sys.argv = ['app.py', '--config-path', 'semantic-search/config.config']
     
     if len(sys.argv) < 3:
-        print('Musí být zadaný alespoň jeden parametr\nHELP\n---------------------------')
+        print('Musi byt zadany alespon jeden parametr\nHELP\n---------------------------')
         parser.print_help()
         exit(INPUT_ERROR_END)
     
     if '--config-path' in sys.argv:
-        print('Načítání z konfiguračního souboru')
-        sys.argv = read_config(sys.argv[2])
+        print('Nacitani z konfiguracniho souboru')
+        try:
+            sys.argv = read_config(sys.argv[2])
+        except:
+            print('Konfiguracni soubor nema spravny format.')
+            exit(INPUT_ERROR_END)
     else:
-        print('Neplatný příkaz')
+        print('Neplatny prikaz')
         parser.print_help()
         exit(INPUT_ERROR_END)
 
     arguments = parser.parse_args()
-    #TODO zkusit na metacentru natrénovat a vyhodnotit w2v
-    #TODO potom zkusit test na crossEncoder, nejdřív vytvořit test data a pak zase velká data na metacentrum
-    main(arguments.train, arguments.to_file, arguments.save, arguments.doc_path, arguments.model_path, arguments.model_name, arguments.queries_path, 
+    main(arguments.train, arguments.save, arguments.doc_path, arguments.model_path, arguments.model_name, arguments.queries_path, 
         arguments.top_n, arguments.result_name, arguments.vector_size, arguments.tfidf_prepro, arguments.lemma, arguments.stopwords, 
-        arguments.deaccent, arguments.lang, arguments.seznam, arguments.save_name)
+        arguments.deaccent, arguments.lang, arguments.seznam, arguments.save_name, arguments.transformer_name, arguments.workers)

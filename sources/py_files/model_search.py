@@ -2,17 +2,18 @@ from abc import ABC, abstractmethod
 import pandas as pd
 import json
 import csv
-from sources.py_files.word_preprocessing import WordPreprocessing
-from sources.py_files.tfidf_prepro import Tfidf_prepro
-import sources.py_files.utils
 
+from sources.py_files.utils import Utils
+from sources.py_files.word_preprocessing import WordPreprocessing
+
+ERROR = -1
 
 class ModelSearch(ABC):
     """
     Třída slouží jako bázová třída pro ostatní modely
     """
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
-                prepro: WordPreprocessing = WordPreprocessing()):
+                prepro: WordPreprocessing = WordPreprocessing(), workers = 1):
         super().__init__()
         self.train = train
         self.data_path = data_path
@@ -21,18 +22,44 @@ class ModelSearch(ABC):
         self.model_path = model_path
         self.tfidf_prepro = tfidf_prepro
         self.prepro = prepro
+        self.utils:Utils = Utils(prepro)
+        self.check_paths()
+        self.workers = workers
 
-        if self.tfidf_prepro:
-            self.tfidf = Tfidf_prepro()
+    def check_paths(self):
+        if '.json' not in self.data_path and '.tsv' not in self.data_path :
+            print(f'doc_path cesta: {self.data_path}')
+            print('doc_path musi byt ve formatu json nebo tsv!')
+            exit(ERROR)
+        
+        if '.' in self.save_name:
+            print('model_path_save uvadejte bez koncovky, program sam rozhodne o koncovce.')
+            exit(ERROR)
+
+        if '.tsv' not in self.seznam_path:
+            print(f'seznam_path cesta: {self.seznam_path}')
+            print('seznam_path musi byt formatu .tsv')
+            exit(ERROR)
 
     @abstractmethod
-    def model_train(self, documents:pd.DataFrame):
+    def print_settings(self):
+        pass
+
+    @abstractmethod
+    def start(self):
+        """
+            Dokud se nezavolá tato metoda, model nic nedělá a je pouze nastavený z konstruktoru
+        """
+        pass
+
+    @abstractmethod
+    def model_train(self, data_path:str):
         """Nastrénuje model
 
         Args:
-            documents (pd.DataFrame): dokumenty na kterých se bude trénovat
+            data_path (str): cesta k dokumentům na kterých se bude trénovat
         """
-        print('Trénování modelu...')
+        print('Trenovani modelu...')
         
     @abstractmethod
     def model_save(self, save_path:str):
@@ -41,14 +68,14 @@ class ModelSearch(ABC):
         Args:
             save_path (str): cesta k uložení (například: C:/modely/muj_model)
         """
-        print('Ukládání modelu...')
+        print(f'Ukladani modelu do {save_path}')
 
     @abstractmethod
     def model_load(self, model_path:str, docs_path):
         """
         Načte model
         """
-        print('Načítání modelu...')
+        print(f'Nacitani modelu z {model_path}')
 
     @abstractmethod
     def load_data(self, path_docs:str):
@@ -62,7 +89,7 @@ class ModelSearch(ABC):
         Returns:
             pd.DataFrame: načtené dokumenty
         """
-        print('Načítání dat...')
+        print('Nacitani dokumentu...')
 
         if '.json' in path_docs:
             with open(path_docs, encoding="utf8") as f:
@@ -71,7 +98,8 @@ class ModelSearch(ABC):
             with open(path_docs, encoding="utf8") as f:
                 docs = csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)
         else:
-            print('Nepodporovaný formát dokumentů')
+            print('path_docs ERROR: Nepodporovany format dokumentu, musi byt json nebo tsv.')
+            print(f'Zadana cesta: {path_docs}')
             exit()
 
         df_docs = pd.DataFrame(docs)
@@ -81,12 +109,9 @@ class ModelSearch(ABC):
     def process_documents(self, documents):
         """Provede zpracování dokumentů 
         """
-        sources.py_files.utils.clean_df(documents, self.prepro)
-        sources.py_files.utils.preprocess(documents, self.prepro)
-    
-        #TODO využít
-        #if self.tfidf_prepro:
-        #    tfidf_df = self.tfidf.calculate_ifidf(self.df_docs)
+        doc = self.utils.clean_df(documents)
+        doc = self.utils.preprocess(doc)
+        return doc
 
     def get_embedding(self, doc_tokens):
         """Vrátí vektor reprezentujícíc dokument
