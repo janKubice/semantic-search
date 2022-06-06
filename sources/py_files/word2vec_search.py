@@ -1,4 +1,3 @@
-from collections import defaultdict
 from sources.py_files.word_preprocessing import WordPreprocessing
 import pandas as pd
 from gensim.models import Word2Vec
@@ -11,19 +10,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 SG = 1 #trénovací algoritmus - 1 pro skip-gram, jinak CBOW
-MIN_COUNT = 20
+MIN_COUNT = 20 #Minimální frekvence slova aby ho algoritmus použil
 
 class Word2VecSearch(ModelSearch):
 
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, vector_size:int = 300, 
-                prepro: WordPreprocessing = WordPreprocessing(), workers:int = 1):
+                prepro: WordPreprocessing = WordPreprocessing(), workers:int = 1, column:str = 'title'):
         """Konstruktor
 
         Args:
             train (bool): zda se má model natrénovat -> True a nebo načíst -> False
             data_path (str): cesta k dokumentům
         """
-        super().__init__(train,data_path,seznam_path,save_name,model_path,tfidf_prepro, prepro, workers)
+        super().__init__(train,data_path,seznam_path,save_name,model_path,tfidf_prepro, prepro, workers, column)
         
         self.df_docs = None
         self.seznam_df = None
@@ -91,7 +90,7 @@ class Word2VecSearch(ModelSearch):
         #Vytvoření a natrénování modelu
         self.model = Word2Vec(data, vector_size=self.vector_size, min_count=MIN_COUNT, sg=SG, workers=self.workers)
 
-        self.df_docs['vector'] = self.df_docs['text'].apply(lambda x :self.get_embedding(x.split()))
+        self.df_docs['vector'] = self.df_docs[self.column].apply(lambda x :self.get_embedding(x.split()))
         self.df_docs.to_csv(f'{os.path.dirname(self.data_path)}/docs_cleaned.csv', index=False)
         print('Trenovani dokonceno')
         self.model_save(self.save_name)
@@ -163,7 +162,6 @@ class Word2VecSearch(ModelSearch):
 
     def ranking_ir(self, query:str, n:int) -> pd.DataFrame:   
         query = self.prepro.process_sentence(query)
-
         vector=self.get_embedding(query.split())
         
         documents=self.df_docs[['id','title','text']].copy()

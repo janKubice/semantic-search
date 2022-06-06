@@ -10,14 +10,18 @@ from sources.py_files.model_search import ModelSearch
 from sources.py_files.word_preprocessing import WordPreprocessing
 
 MAX_LENGTH = 512
-BATCH_SIZE = 32
+WARMUP_STEPS = 500
+BATCH_SIZE = 1024
+STEPS_PER_EPOCH = 100_000
+EPOCHS = 1
 WARMUP_COEF = 0.1
 ERROR = -1
 
 class CrossAttentionSearch(ModelSearch):
 
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
-                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', workers:int = 1):
+                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', 
+                workers:int = 1, column:str = 'title'):
 
         """
             Modely k použití a vyzkoušení:
@@ -25,7 +29,7 @@ class CrossAttentionSearch(ModelSearch):
             : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
             : 
         """
-        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers)
+        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers, column)
         self.transformer_name = transformer_name
         self.workers = workers
         self.print_settings()
@@ -73,18 +77,17 @@ class CrossAttentionSearch(ModelSearch):
 
         samples_train = []
 
+
+        
         for _, row in seznam_df.iterrows():
-            samples_train.append(InputExample(texts=[row['query'], row['title']], label=row['label']))
-            samples_train.append(InputExample(texts=[row['title'], row['query']], label=row['label']))
+            samples_train.append(InputExample(texts=[row['query'], row['doc' if self.column == 'text' else self.column]], label=row['label']))
+            samples_train.append(InputExample(texts=[row['doc' if self.column == 'text' else self.column], row['query']], label=row['label']))
 
         train_dataloader = DataLoader(samples_train, shuffle=True, batch_size=BATCH_SIZE)
 
-        num_epochs = 1 
-        warmup_steps = math.ceil(len(train_dataloader) * num_epochs * WARMUP_COEF)
-
         self.model.fit(train_dataloader=train_dataloader,
-          epochs=num_epochs,
-          warmup_steps=warmup_steps,
+          epochs=EPOCHS,
+          warmup_steps=WARMUP_STEPS,
           output_path=self.save_name)
 
     def model_load(self, model_path: str, docs_path:str):
@@ -115,11 +118,11 @@ class CrossAttentionSearch(ModelSearch):
         ids = [id for id in self.df_docs['id']]
 
         #Vytvořím všechny dvojice query a documentu, predikuju jejich scóre vzniklých páru [query, doc]
-        model_inputs = [[query, doc] for doc in self.df_docs['title']]
+        model_inputs = [[query, doc] for doc in self.df_docs[self.column]]
         scores = self.model.predict(model_inputs, batch_size=BATCH_SIZE, show_progress_bar=True)
         
         #Seřadím skóre
-        results = [{'id':id, 'title': inp, 'score': score} for id, inp, score in zip(ids, model_inputs, scores)]
+        results = [{'id':id, self.column: inp, 'score': score} for id, inp, score in zip(ids, model_inputs, scores)]
         results = sorted(results, key=lambda x: x['score'], reverse=True)
 
         dataframe = pd.DataFrame(results).head(n).reset_index(drop=True)

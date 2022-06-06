@@ -13,7 +13,7 @@ class ModelSearch(ABC):
     Třída slouží jako bázová třída pro ostatní modely
     """
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
-                prepro: WordPreprocessing = WordPreprocessing(), workers = 1):
+                prepro: WordPreprocessing = WordPreprocessing(), workers:int = 1, column:str = 'title'):
         super().__init__()
         self.train = train
         self.data_path = data_path
@@ -25,7 +25,8 @@ class ModelSearch(ABC):
         self.utils:Utils = Utils(prepro)
         self.check_paths()
         self.workers = workers
-
+        self.column = column
+        
     def check_paths(self):
         if '.json' not in self.data_path and '.tsv' not in self.data_path :
             print(f'doc_path cesta: {self.data_path}')
@@ -36,7 +37,7 @@ class ModelSearch(ABC):
             print('model_path_save uvadejte bez koncovky, program sam rozhodne o koncovce.')
             exit(ERROR)
 
-        if '.tsv' not in self.seznam_path:
+        if self.train and '.tsv' not in self.seznam_path:
             print(f'seznam_path cesta: {self.seznam_path}')
             print('seznam_path musi byt formatu .tsv')
             exit(ERROR)

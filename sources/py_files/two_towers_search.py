@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer, util
 import torch
-from transformers import InputExample
+from transformers import AdamW, AutoTokenizer, InputExample, Trainer, TrainingArguments, get_linear_schedule_with_warmup
 from sources.py_files.word_preprocessing import WordPreprocessing
 from sources.py_files.model_search import ModelSearch
 from os.path import exists
@@ -11,18 +11,23 @@ from torch.utils.data import DataLoader
 from sentence_transformers import SentenceTransformer, InputExample, losses
 
 ERROR = -1
+EPOCHS = 1
+WARMUP_STEPS = 500
+BATCH_SIZE = 1024
+STEPS_PER_EPOCH = 100_000
 
 class TwoTowersSearch(ModelSearch):
 
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
-                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', workers = 1):
+                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', 
+                workers = 1, column:str = 'title'):
         """Konstruktor
 
         Args:
             train (bool): zda se má model natrénovat -> True a nebo načíst -> False
             data_path (str): cesta k dokumentům
         """
-        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers)
+        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers, column)
         self.transformer_name = transformer_name
 
     def print_settings(self):
@@ -31,7 +36,7 @@ class TwoTowersSearch(ModelSearch):
         print('Model bezi na:', device)
     
     def start(self):
-        if exists(self.save_name):
+        if self.train and exists(self.save_name):
             print(f'nazev modelu pro ulozeni: {self.save_name}')
             print('Soubor se stejnym jmenem jiz existuje.\nZvolte jiny nazev a spustte program znovu.')
             exit()
@@ -49,7 +54,7 @@ class TwoTowersSearch(ModelSearch):
             self.model_load(self.model_path, self.data_path)
 
         print('Vytvarim embedding pro corpus')
-        self.corpus_embeding = self.get_embedding(self.df_docs['title'])
+        self.corpus_embeding = self.get_embedding(self.df_docs[self.column])
         print('Embedding pro corpus vytvoren')
 
     def model_train(self, data_path:str):
@@ -58,7 +63,8 @@ class TwoTowersSearch(ModelSearch):
             exit()
 
         try:
-            self.model = SentenceTransformer(self.transformer_name, device='cuda')
+            tokenizer = AutoTokenizer.from_pretrained(self.transformer_name)
+            self.model = SentenceTransformer(self.transformer_name, tokenizer, device='cuda')
         except BaseException as e:
             print(str(e))
             print(f'Zadene jmeno transformeru neexistuje: {self.transformer_name}')
@@ -72,14 +78,20 @@ class TwoTowersSearch(ModelSearch):
 
         train_examples = []
         for _, row in seznam_df.iterrows():
-            train_examples.append(InputExample(texts=[row['query'], row['title']], label=row['label']))
+            train_examples.append(InputExample(texts=[row['query'], row['doc' if self.column == 'text' else self.column]], label=row['label']))
 
-        train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+        train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=BATCH_SIZE)
         train_loss = losses.CosineSimilarityLoss(self.model)
 
         self.model.fit(train_objectives=[(train_dataloader, train_loss)], 
-                        epochs=100, 
-                        warmup_steps=100)
+                        epochs=EPOCHS, 
+                        warmup_steps=WARMUP_STEPS,
+                        show_progress_bar=True,
+                        steps_per_epoch=STEPS_PER_EPOCH,
+                        )
+
+        
+        self.model_save(self.save_name)
 
     def model_load(self, model_path: str, docs_path):
         super().model_load(model_path,docs_path)
@@ -101,7 +113,7 @@ class TwoTowersSearch(ModelSearch):
         return super().load_data(path_docs)
 
     def get_embedding(self, doc_tokens):
-        return self.model.encode(doc_tokens, convert_to_numpy=True, device='cuda' if torch.cuda.is_available() else None, show_progress_bar=True)
+        return self.model.encode(doc_tokens, convert_to_numpy=True, device='cuda' if torch.cuda.is_available() else None, show_progress_bar=True, batch_size=BATCH_SIZE)
 
     def ranking_ir(self, query: str, n: int) -> pd.DataFrame:
         documents=self.df_docs[['id','title','text']].copy()

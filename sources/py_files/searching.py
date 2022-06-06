@@ -18,7 +18,8 @@ class Search():
 
     def __init__(
         self, train:bool, save:bool, doc_path:str, model_path:str, model_name:str, tfidf_prepro:bool, 
-        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, seznam:str, save_name:str, transformer_name:str, vector_size:int = 300, workers:int = 1) -> None:
+        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, seznam:str, save_name:str, transformer_name:str, 
+        vector_size:int = 300, workers:int = 1, column:str = 'title') -> None:
         """Vytvoří objekt pro vyhledávání se zadaným nastavením
 
         Args:
@@ -53,6 +54,7 @@ class Search():
         self.save_name = save_name
         self.transformer_name = transformer_name
         self.workers = workers
+        self.column = column
         
         self.prepro = WordPreprocessing(True, self.lemma, self.stopwords, self.deaccent, self.lang)
 
@@ -103,21 +105,26 @@ class Search():
             for idx, res in top_q.iterrows():
                 results.write(f'{query["id"]} 0 {res["id"]} {idx} {res["score"]} 0\n')
 
+    #TODO pridat save parametr, kdyz se neuklada nebudu kontrolovat cesty a tak
     def word2vec(self):
         """Vrátí model pro word2vec"""
-        return Word2VecSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.vector_size, self.prepro, self.workers)
+        return Word2VecSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+                              self.tfidf_prepro, self.vector_size, self.prepro, self.workers, self.column)
 
     def two_towers(self):
         """Vrátí model pro two tower"""
-        return TwoTowersSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.prepro, self.transformer_name, self.workers)
+        return TwoTowersSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+                               self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
 
     def cross_attention(self):
         """Vrátí model pro cross attention"""
-        return CrossAttentionSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.prepro, self.transformer_name, self.workers)
+        return CrossAttentionSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+                                    self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
         
     def cross_two_tower(self):
         """vrátí kombinovaný model"""
-        return CrossTwoTower(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, self.tfidf_prepro, self.prepro, self.transformer_name, self.workers)
+        return CrossTwoTower(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+                             self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
     
 
     

@@ -15,7 +15,8 @@ ERROR = -1
 class CrossTwoTower(ModelSearch):
 
     def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
-                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', workers:int = 1):
+                prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', 
+                workers:int = 1, column:str = 'title'):
 
         """
             Modely k použití a vyzkoušení:
@@ -23,7 +24,7 @@ class CrossTwoTower(ModelSearch):
             : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
             : 
         """
-        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers)
+        super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers, column)
         self.transformer_name = transformer_name
         self.workers = workers
 
