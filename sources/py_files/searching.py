@@ -1,6 +1,8 @@
-import os
+import time
+
 from sources.py_files.model_search import ModelSearch
 import pandas as pd
+import numpy as np
 import json
 
 from sources.py_files.word2vec_search import Word2VecSearch
@@ -18,7 +20,7 @@ class Search():
 
     def __init__(
         self, train:bool, save:bool, doc_path:str, model_path:str, model_name:str, tfidf_prepro:bool, 
-        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, seznam:str, save_name:str, transformer_name:str, 
+        lemma:bool, remove_stopwords:bool, deaccent:bool, lang:str, seznam:str, save_name:str, transformer_name:str, validation_path:str,
         vector_size:int = 300, workers:int = 1, column:str = 'title') -> None:
         """Vytvoří objekt pro vyhledávání se zadaným nastavením
 
@@ -35,8 +37,10 @@ class Search():
             seznam (str): Cesta k seznam dokumentu
             save_name (str): Cesta i s názvem modelu bez koncovky, program sám určí koncovku
             transformer_name (str): Jaký Transformer se použije
+            validation_path (str): cesta k validačnímu datasetu
             vector_size (int, optional): velikost vektoru reprezentující dokument, využívá se pouze pro w2v. Defaults to 300.
             workers (int, optional): počet vláken
+            columns (str, optional): podle jakého sloupce se bude vyhodnocovat podobnost. Pro seznam data text=doc
         """
         
         self.train = train
@@ -55,6 +59,7 @@ class Search():
         self.transformer_name = transformer_name
         self.workers = workers
         self.column = column
+        self.validation_path = validation_path
         
         self.prepro = WordPreprocessing(True, self.lemma, self.stopwords, self.deaccent, self.lang)
 
@@ -89,7 +94,7 @@ class Search():
 
         if '.txt' not in result_path:
             print(f'result_path cesta: {result_path}')
-            print('result_path musí byt .txt!')
+            print('result_path musi byt .txt!')
             exit(ERROR)
 
         print('Nacitani dotazu a hledani relevantnich odpovedi')
@@ -100,12 +105,18 @@ class Search():
 
         df_queries = pd.DataFrame(queries)
 
+        times = []
+
         for _, query in df_queries.iterrows():
+            start = time.time()
             top_q = model.ranking_ir(query['title'], top_n)
+            end = time.time()
+            times.append(end - start)
             for idx, res in top_q.iterrows():
                 results.write(f'{query["id"]} 0 {res["id"]} {idx} {res["score"]} 0\n')
 
-    #TODO pridat save parametr, kdyz se neuklada nebudu kontrolovat cesty a tak
+        print(f'Prumerny cas dotazu je: {np.mean(times)} sekundy')
+
     def word2vec(self):
         """Vrátí model pro word2vec"""
         return Word2VecSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
@@ -113,17 +124,17 @@ class Search():
 
     def two_towers(self):
         """Vrátí model pro two tower"""
-        return TwoTowersSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+        return TwoTowersSearch(self.train, self.doc_path, self.seznam, self.save_name, self.validation_path,self.model_path, 
                                self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
 
     def cross_attention(self):
         """Vrátí model pro cross attention"""
-        return CrossAttentionSearch(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+        return CrossAttentionSearch(self.train, self.doc_path, self.seznam, self.save_name, self.validation_path, self.model_path, 
                                     self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
         
     def cross_two_tower(self):
         """vrátí kombinovaný model"""
-        return CrossTwoTower(self.train, self.doc_path, self.seznam, self.save_name, self.model_path, 
+        return CrossTwoTower(self.train, self.doc_path, self.seznam, self.save_name, self.validation_path, self.model_path, 
                              self.tfidf_prepro, self.prepro, self.transformer_name, self.workers, self.column)
     
 

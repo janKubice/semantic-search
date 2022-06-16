@@ -14,47 +14,39 @@ ERROR = -1
 
 class CrossTwoTower(ModelSearch):
 
-    def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, model_path:str = None, tfidf_prepro = False, 
+    def __init__(self, train:bool, data_path:str, seznam_path:str, save_name:str, validation_path:str,model_path:str = None, tfidf_prepro = False, 
                 prepro: WordPreprocessing = WordPreprocessing(), transformer_name = 'paraphrase-multilingual-mpnet-base-v2', 
                 workers:int = 1, column:str = 'title'):
 
-        """
-            Modely k použití a vyzkoušení:
-            : https://huggingface.co/Seznam/small-e-czech
-            : https://huggingface.co/sentence-transformers/paraphrase-multilingual-mpnet-base-v2
-            : 
-        """
         super().__init__(train, data_path, seznam_path, save_name, model_path, tfidf_prepro, prepro, workers, column)
         self.transformer_name = transformer_name
+        self.validation_path = validation_path
         self.workers = workers
 
     def print_settings(self):
-        print(f'Jmeno transformeru: {self.transformer_name}')
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print('Model bezi na:', device)
+        super().print_settings()
 
-        
     def start(self):
         if self.transformer_name == None:
-            print('Nebyl zadan nazev modelu pro CrossAttention')
-            exit()
+            print('Nebyl zadan nazev modelu pro kombinovanou metodu')
+            exit(ERROR)
             
-        if exists(self.save_name):
+        if self.train and exists(self.save_name):
             print(f'nazev modelu: {self.save_name}')
             print('Soubor se stejnym jmenem jiz existuje.\nZvolte jiny nazev a spustte program znovu.')
-            exit()
+            exit(ERROR)
 
         if self.train == True and torch.cuda.is_available() == False:
-            print('ERROR: Pro trenovani je potreba mit akctivni CUDA.')
-            exit()
+            print('WARNING: Neni aktivni CUDA. Delka trenovani bude znacne delsi!')
 
-        tt_save_name = self.save_name + 'tt'
-        ca_save_name = self.save_name + 'tt'
+        tt_save_name = self.save_name + '_combo_tt'
+        ca_save_name = self.save_name + '_combo_ca'
 
         self.model_tt:TwoTowersSearch = TwoTowersSearch(self.train,
                                         self.data_path, 
                                         self.seznam_path,
-                                        tt_save_name, 
+                                        tt_save_name,
+                                        self.validation_path,
                                         self.model_path, 
                                         self.tfidf_prepro, 
                                         self.prepro,
@@ -66,6 +58,7 @@ class CrossTwoTower(ModelSearch):
                                              self.data_path, 
                                              self.seznam_path,
                                              ca_save_name, 
+                                             self.validation_path,
                                              self.model_path, 
                                              self.tfidf_prepro, 
                                              self.prepro,

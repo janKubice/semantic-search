@@ -34,6 +34,7 @@ def read_config(path_to_config) -> list:
     queries_path = config.get('PATHS', 'queries_path')
     result_path = config.get('PATHS', 'result_file_path')
     seznam_path = config.get('PATHS', 'seznam_path')
+    validation_path = config.get('PATHS', 'validation_path')
 
     model_name = config.get('MODELS', 'model_name')
     transformer_name = config.get('MODELS', 'transformer_model')
@@ -72,17 +73,18 @@ def read_config(path_to_config) -> list:
             '--seznam', seznam_path,
             '--transformer-name', transformer_name,
             '--workers', workers,
-            '--column', column]
+            '--column', column,
+            '--validation_path', validation_path]
 
 def main(train, save, doc_path, model_path, model_name, queries_path, 
-        top_n, result_name, vector_size, tfidf_prepro, lemma, stopwords, deaccent, lang, seznam, save_name, transformer_name, workers, column):
+        top_n, result_name, vector_size, tfidf_prepro, lemma, stopwords, deaccent, lang, seznam, 
+        save_name, transformer_name, workers, column, validation_path):
     """
     Hlavní funkce která se spustí při zapnutí scriptu
     """
-    #Všechny parametry musím přetypovat protože se jedná o stringy
     try:
         searcher = Search(eval(train), eval(save), doc_path, model_path, model_name, eval(tfidf_prepro), eval(lemma), 
-                        eval(stopwords), eval(deaccent), lang, seznam, save_name, transformer_name, int(vector_size), int(workers), column)
+                        eval(stopwords), eval(deaccent), lang, seznam, save_name, transformer_name, validation_path, int(vector_size), int(workers), column)
     except:
         print('Nektery z parametru nema spravny format.')
         exit(INPUT_ERROR_END)
@@ -115,15 +117,15 @@ if __name__ == '__main__':
     parser.add_argument('--lang', action='store', dest='lang', type=str, help='Jazyk textu')
     parser.add_argument('--transformer-name', action='store', dest='transformer_name', type=str, help='Jaký předtrénovaný model bude využit pro Transformer')
     parser.add_argument('--workers', action='store', dest='workers', type=int, help='Kolik bude potecionálně využito vláken', default=1)
-    parser.add_argument('--column', action='store', dest='column', choices=['title', 'text'], help="Jaký sloupec se využije pro trénování a vyhodnocování")
+    parser.add_argument('--column', action='store', dest='column', choices=['title', 'text'], help="Jaký sloupec se využije pro trénování a vyhodnocování, například v seznam dokumentech doc=text")
+    parser.add_argument('--validation_path', action='store', dest='validation_path', help="Jaký dataset se má využít na validaci, pokud bude zadaná cesta která neexistuje neprovede se validace")
 
 
     #INFO Testovací příkazová řádka
-    #TODO Nezapomenout odstranit do produkce
-    sys.argv = ['app.py', '--config-path', 'semantic-search/config.config']
+    #sys.argv = ['app.py', '--config-path', 'semantic-search/config.config']
     
     if len(sys.argv) < 3:
-        print('Musi byt zadany alespon jeden parametr\nHELP\n---------------------------')
+        print('Musi byt zadany alespon jeden parametr (--config-path)\nHELP\n---------------------------')
         parser.print_help()
         exit(INPUT_ERROR_END)
     
@@ -142,4 +144,4 @@ if __name__ == '__main__':
     arguments = parser.parse_args()
     main(arguments.train, arguments.save, arguments.doc_path, arguments.model_path, arguments.model_name, arguments.queries_path, 
         arguments.top_n, arguments.result_name, arguments.vector_size, arguments.tfidf_prepro, arguments.lemma, arguments.stopwords, 
-        arguments.deaccent, arguments.lang, arguments.seznam, arguments.save_name, arguments.transformer_name, arguments.workers, arguments.column)
+        arguments.deaccent, arguments.lang, arguments.seznam, arguments.save_name, arguments.transformer_name, arguments.workers, arguments.column, arguments.validation_path)

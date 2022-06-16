@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import os
 import pandas as pd
 import json
 import csv
@@ -42,9 +43,24 @@ class ModelSearch(ABC):
             print('seznam_path musi byt formatu .tsv')
             exit(ERROR)
 
+        if os.path.exists(self.data_path) == False:
+            print('ERROR: doc-path neexistuje!')
+            exit(ERROR)
+
+        if os.path.exists(self.seznam_path) == False:
+            print('ERROR: seznam cesta neexistuje!')
+            exit(ERROR)
+
+
     @abstractmethod
     def print_settings(self):
-        pass
+        print(f'train: {str(self.train)}')
+        print(f'doc_path: {self.data_path}')
+        print(f'seznam_path: {self.seznam_path}')
+        print(f'save_name: {self.save_name}')
+        print(f'cores: {str(self.workers)}')
+        print(f'column: {self.column}')
+        print(self.utils.print_settings())
 
     @abstractmethod
     def start(self):

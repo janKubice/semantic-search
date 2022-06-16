@@ -33,9 +33,9 @@ class Word2VecSearch(ModelSearch):
         self.print_settings()
 
     def print_settings(self):
+        super().print_settings()
         print('Nastaveni modelu Word2Vec')
         print(f'tfidf: {self.tfidf_prepro}')
-        print(f'workers: {self.workers}')
 
     def start(self):
         if self.seznam_df == None:

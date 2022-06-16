@@ -101,16 +101,17 @@ class WordPreprocessing:
         text=re.sub('[^A-Za-z0-9]+ ', ' ', text)
         text=re.sub('"().,_', '',text)
         text=re.sub('_', '', text)
+        text=re.sub('(https?:\/\/(www\.)?|[-_\t])', '', text)
         return text
 
-    def process_sentence(self, sentence:str):
+    def process_sentence(self, sentence:str) -> str:
         """Zpracuje jednu větu dokumentu
 
         Args:
             sentence (str): věta
 
         Returns:
-            array: pole upravených slov
+            str: upravená věta
         """
         sent = [self.process_word(w) for w in sentence.split()]
         sent_not_none = ' '.join([str(elem) for elem in sent if len(elem) > 0])
