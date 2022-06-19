@@ -141,7 +141,6 @@ if __name__ == '__main__':
     parser.add_argument('--column', action='store', dest='column', choices=['title', 'text'], help="Jaký sloupec se využije pro trénování a vyhodnocování, například v seznam dokumentech doc=text")
     parser.add_argument('--validation_path', action='store', dest='validation_path', help="Jaký dataset se má využít na validaci, pokud bude zadaná cesta která neexistuje neprovede se validace")
 
-
     #INFO Testovací příkazová řádka
     #sys.argv = ['app.py', '--config-path', 'semantic-search/config.config']
     
