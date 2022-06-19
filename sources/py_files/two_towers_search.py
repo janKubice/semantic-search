@@ -4,8 +4,7 @@ from os.path import exists
 import numpy as np
 import pandas as pd
 import torch
-from sentence_transformers import (InputExample, SentenceTransformer,
-                                   evaluation, losses)
+from sentence_transformers import InputExample, SentenceTransformer, losses
 from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
 from sklearn.metrics.pairwise import cosine_similarity
 from sources.py_files.model_search import ModelSearch

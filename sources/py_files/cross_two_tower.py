@@ -7,9 +7,6 @@ from sources.py_files.model_search import ModelSearch
 from sources.py_files.two_towers_search import TwoTowersSearch
 from sources.py_files.word_preprocessing import WordPreprocessing
 
-MAX_LENGTH = 512
-BATCH_SIZE = 32
-WARMUP_COEF = 0.1
 ERROR = -1
 
 class CrossTwoTower(ModelSearch):

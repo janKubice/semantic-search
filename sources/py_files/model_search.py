@@ -152,3 +152,5 @@ class ModelSearch(ABC):
             pd.DataFrame: dataframe s n nejlepšími výsledky
         """
         pass
+
+

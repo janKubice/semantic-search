@@ -76,11 +76,32 @@ def read_config(path_to_config) -> list:
             '--column', column,
             '--validation_path', validation_path]
 
-def main(train, save, doc_path, model_path, model_name, queries_path, 
-        top_n, result_name, vector_size, tfidf_prepro, lemma, stopwords, deaccent, lang, seznam, 
-        save_name, transformer_name, workers, column, validation_path):
+def main(train:bool, save:bool, doc_path:str, model_path:str, model_name:str, queries_path:str, 
+        top_n:int, result_name:str, vector_size:int, tfidf_prepro:bool, lemma:bool, stopwords:bool, deaccent:bool, lang:str, seznam:str, 
+        save_name:str, transformer_name:str, workers:int, column:str, validation_path:str):
     """
     Hlavní funkce která se spustí při zapnutí scriptu
+    
+    train (bool): Zda se má moddel natrénovat a nebo použít již natrénovaný
+    save (bool): Zda se má model uložit
+    doc_path (str): Cesta s souboru s dokumenty
+    model_path (str): Cesta k již natrénovanému modelu
+    model_name (str): Název modelu který se využije. W2V = word2vec, tt = two towers, ca = cross attention, ct = kombinace ca a tt
+    queries_path (str): Cesta k dotazům
+    top_n (int): N nejlepšíh dotazů
+    result_name (str): Jak se uloží soubor s výsledky
+    vector_size (int): velikost vektoru pro W2V
+    tfidf_prepro (bool): Zda se využije tfidf u W2V
+    lemma (bool): Zda se využije lemmatizace
+    stopwords (bool): Zda se odstraní stopová slova
+    deaccent (bool): zda se odstraní akcent
+    lang (str): jaký jazyk se použije 
+    seznam (str): cesta k seznam datum
+    save_name (str): název modelu pro uložení
+    transformer_name (str): Jaký předtrénovaný model bude využit pro Transformer
+    workers (int): počet vláken
+    column (str): Jaký sloupec se využije pro trénování a vyhodnocování, například v seznam dokumentech doc=text
+    validation_path (str): cesta k validačnímu souboru
     """
     try:
         searcher = Search(eval(train), eval(save), doc_path, model_path, model_name, eval(tfidf_prepro), eval(lemma), 

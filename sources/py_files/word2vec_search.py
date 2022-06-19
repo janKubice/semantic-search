@@ -140,7 +140,7 @@ class Word2VecSearch(ModelSearch):
 
     def get_embedding(self, doc_tokens):
         embeddings = []
-        if len(doc_tokens)<1:
+        if len(doc_tokens)<1: #Pokud je málo tokenů vracím nuly
             return np.zeros(self.vector_size)
         else:
             for tok in doc_tokens:
@@ -149,12 +149,12 @@ class Word2VecSearch(ModelSearch):
 
                 if tok in self.model.wv.key_to_index: #Když se slovo nachází ve slovníku modelu tak ho převedu na na vektor
                     if self.tfidf_prepro == True:
-                        embeddings.append(self.model.wv.word_vec(tok) * self.w2v_weights[tok])
+                        embeddings.append(self.model.wv.word_vec(tok) * self.w2v_weights[tok]) #Vážení tfidf
                     else:
                         embeddings.append(self.model.wv.word_vec(tok))
                 else: #Když se slovo nenachází ve slovníku tak ho nahradím náhodným vektorem
                     if self.tfidf_prepro == True:
-                        embeddings.append(np.random.rand(self.vector_size) * self.w2v_weights[tok]) 
+                        embeddings.append(np.random.rand(self.vector_size) * self.w2v_weights[tok]) #Vážení tfidf
                     else:
                         embeddings.append(np.random.rand(self.vector_size)) 
 

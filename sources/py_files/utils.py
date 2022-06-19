@@ -14,10 +14,10 @@ class Utils:
     def print_settings(self):
         """Vypíše nastavení předzpracování"""
         print('Nastaveni predzpracovani:')
-        print(f'{str(self.prepro.deaccent)}')
-        print(f'{str(self.prepro.lowercase)}')
-        print(f'{str(self.prepro.remove_stopwords)}')
-        print(f'{str(self.prepro.lemmatize)}')
+        print(f'Deaccent: {str(self.prepro.deaccent)}')
+        print(f'Lowercase: {str(self.prepro.lowercase)}')
+        print(f'Odstraneni stopwords{str(self.prepro.remove_stopwords)}')
+        print(f'Lemmatizace {str(self.prepro.lemmatize)}')
 
     def clean_df(self, df:pd.DataFrame) -> pd.DataFrame:
         """Vyčiští dataframe

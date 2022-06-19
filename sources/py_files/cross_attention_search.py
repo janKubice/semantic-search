@@ -5,12 +5,11 @@ import pandas as pd
 import torch
 from sentence_transformers import InputExample
 from sentence_transformers.cross_encoder import CrossEncoder
+from sentence_transformers.cross_encoder.evaluation import \
+    CECorrelationEvaluator
 from sources.py_files.model_search import ModelSearch
 from sources.py_files.word_preprocessing import WordPreprocessing
 from torch.utils.data import DataLoader
-from sentence_transformers.evaluation import EmbeddingSimilarityEvaluator
-from sentence_transformers.cross_encoder.evaluation import CESoftmaxAccuracyEvaluator, CECorrelationEvaluator
-
 
 MAX_LENGTH = 512
 WARMUP_STEPS = 500
@@ -92,7 +91,6 @@ class CrossAttentionSearch(ModelSearch):
             seznam_df_val['label'] = seznam_df_val['label'].astype(float, errors='raise')
             seznam_df_val = self.process_documents(seznam_df_val)
             
-            test_samples = []
             texts = []
             labels = []
             for _, row in seznam_df_val.iterrows():
@@ -101,6 +99,8 @@ class CrossAttentionSearch(ModelSearch):
 
             test_evaluator = CECorrelationEvaluator(texts,labels, 'results', True)
             test_evaluator(self.model, output_path=self.save_name)
+
+            self.evaluate_model()
 
     def model_load(self, model_path: str, docs_path:str):
         super().model_load(model_path,docs_path)
