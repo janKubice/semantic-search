@@ -105,10 +105,14 @@ class Utils:
         print(f'Nacitam seznam data z: {path}')
         seznam_documents = open(path, encoding="utf8")
         text = csv.reader(seznam_documents, delimiter='\t', quoting=csv.QUOTE_NONE)
-        dataframe = pd.DataFrame(text)
+        dataframe:pd.DataFrame = pd.DataFrame(text)
 
         dataframe.columns = dataframe.iloc[0]
         dataframe = dataframe[1:]
+
+        for col in ['query', 'doc', 'title']:
+            dataframe = dataframe.loc[(dataframe[col].str.len() != 0)]
+            dataframe = dataframe.loc[~dataframe[col].astype(str).str.isnumeric()]
 
         if len(dataframe) == 0:
             print('Nepovedlo se nacist seznam data')

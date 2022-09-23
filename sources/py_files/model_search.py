@@ -29,25 +29,25 @@ class ModelSearch(ABC):
         self.column = column
         
     def check_paths(self):
-        if '.json' not in self.data_path and '.tsv' not in self.data_path :
+        if not self.data_path != None and '.json' not in self.data_path and '.tsv' not in self.data_path :
             print(f'doc_path cesta: {self.data_path}')
             print('doc_path musi byt ve formatu json nebo tsv!')
             exit(ERROR)
         
-        if '.' in self.save_name:
+        if not self.save_name != None and '.' in self.save_name:
             print('model_path_save uvadejte bez koncovky, program sam rozhodne o koncovce.')
             exit(ERROR)
 
-        if self.train and '.tsv' not in self.seznam_path:
+        if not self.seznam_path != None and self.train and '.tsv' not in self.seznam_path:
             print(f'seznam_path cesta: {self.seznam_path}')
             print('seznam_path musi byt formatu .tsv')
             exit(ERROR)
 
-        if os.path.exists(self.data_path) == False:
+        if not self.data_path != None and os.path.exists(self.data_path) == False:
             print('ERROR: doc-path neexistuje!')
             exit(ERROR)
 
-        if os.path.exists(self.seznam_path) == False:
+        if not self.seznam_path != None and os.path.exists(self.seznam_path) == False:
             print('ERROR: seznam cesta neexistuje!')
             exit(ERROR)
 
@@ -121,6 +121,11 @@ class ModelSearch(ABC):
 
         df_docs = pd.DataFrame(docs)
         df_docs.index = df_docs['id'].values
+
+        for col in ['text', 'title']:
+            dataframe = dataframe.loc[(dataframe[col].str.len() != 0)]
+            dataframe = dataframe.loc[~dataframe[col].astype(str).str.isnumeric()]
+
         return df_docs
 
     def process_documents(self, documents):

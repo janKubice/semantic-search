@@ -7,6 +7,8 @@ import configparser
 SUCCESSFUL_END = 0
 INPUT_ERROR_END = -1
 
+#TODO https://www.kaggle.com/code/ajitrajput/semantic-search-engine-using-nlp
+
 def read_config(path_to_config) -> list:
     """Přečte config a vrátí ho jako příkazovou řádku která se nastaví argparseru
 

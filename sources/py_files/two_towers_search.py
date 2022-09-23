@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 ERROR = -1
 EPOCHS = 1
 WARMUP_STEPS = 500
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 
 class TwoTowersSearch(ModelSearch):
 

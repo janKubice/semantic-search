@@ -100,8 +100,6 @@ class CrossAttentionSearch(ModelSearch):
             test_evaluator = CECorrelationEvaluator(texts,labels, 'results', True)
             test_evaluator(self.model, output_path=self.save_name)
 
-            self.evaluate_model()
-
     def model_load(self, model_path: str, docs_path:str):
         super().model_load(model_path,docs_path)
         self.df_docs = self.load_data(docs_path)
